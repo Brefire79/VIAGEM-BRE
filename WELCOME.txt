@@ -1,0 +1,155 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│     🎉  BEM-VINDO AO SEU PWA COLABORATIVO DE VIAGEM  🎉        │
+│                                                                 │
+│                    ✈️  Viagem Colaborativa  🗺️                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    🚀 INÍCIO RÁPIDO                           ║
+╚═══════════════════════════════════════════════════════════════╝
+
+1️⃣  INSTALAR DEPENDÊNCIAS
+   npm install
+
+2️⃣  CONFIGURAR FIREBASE
+   • Crie projeto em: https://console.firebase.google.com
+   • Ative Authentication (Email/Password)
+   • Ative Firestore Database (modo teste)
+   • Copie credenciais para o arquivo .env
+
+3️⃣  INICIAR APLICAÇÃO
+   npm run dev
+
+4️⃣  ABRIR NO NAVEGADOR
+   http://localhost:5173
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    📚 DOCUMENTAÇÃO                            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────┐
+│  📖 README.md          → Documentação completa              │
+│  ⚡ SETUP.md           → Guia rápido (5 minutos)            │
+│  📊 EXAMPLES.md        → Exemplos de dados                  │
+│  ✅ CHECKLIST.md       → Lista de implementações            │
+│  🏗️  ARCHITECTURE.md   → Arquitetura detalhada              │
+│  📋 SUMMARY.md         → Resumo executivo                   │
+│  🛠️  COMMANDS.md       → Comandos úteis                     │
+│  📂 STRUCTURE.md       → Estrutura do projeto               │
+└─────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════╗
+║                ✨ FUNCIONALIDADES INCLUÍDAS                   ║
+╚═══════════════════════════════════════════════════════════════╝
+
+🗺️  ROTEIRO COLABORATIVO
+   ✅ Criar, editar e excluir eventos
+   ✅ 5 tipos: Voo, Transfer, Hospedagem, Passeio, Alimentação
+   ✅ Organização por data
+   ✅ Sincronização em tempo real
+
+💰 CONTROLE FINANCEIRO
+   ✅ Cadastro de despesas
+   ✅ Divisão entre participantes
+   ✅ Cálculos automáticos:
+      • Total da viagem
+      • Total por categoria
+      • Balanço por pessoa
+      • Quem deve/quem recebe
+
+📖 HISTÓRIA DA VIAGEM
+   ✅ Geração automática de narrativa
+   ✅ Exportar como Markdown
+   ✅ Copiar para clipboard
+   ✅ Resumo financeiro integrado
+
+🔐 AUTENTICAÇÃO
+   ✅ Login/Registro com email
+   ✅ Proteção de rotas
+   ✅ Sessão persistente
+
+📱 PWA
+   ✅ Instalável em qualquer dispositivo
+   ✅ Funciona offline
+   ✅ Experiência nativa
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    🎨 TECNOLOGIAS                             ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Frontend:
+  • React 18            → Framework UI
+  • React Router 6      → Navegação
+  • TailwindCSS 3       → Estilização
+  • Lucide React        → Ícones
+  • date-fns            → Datas
+
+Backend:
+  • Firebase Auth       → Autenticação
+  • Firestore          → Banco de dados tempo real
+
+Build:
+  • Vite 5             → Build tool rápido
+  • Vite PWA Plugin    → PWA automático
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    📊 ESTATÍSTICAS                            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📁 Arquivos:           35 arquivos
+💻 Linhas de código:   ~5.600 linhas
+📄 Páginas:            4 páginas principais
+🎨 Componentes:        7 componentes
+🔥 Features:           17 funcionalidades
+⚡ Performance:        Otimizado com Vite
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    🎯 PRÓXIMOS PASSOS                         ║
+╚═══════════════════════════════════════════════════════════════╝
+
+1. Leia SETUP.md para configuração rápida
+2. Configure o Firebase
+3. Teste todas as funcionalidades
+4. Faça deploy no Netlify (opcional)
+5. Convide amigos para colaborar!
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    💡 DICAS                                   ║
+╚═══════════════════════════════════════════════════════════════╝
+
+• Adicione à tela inicial para experiência PWA completa
+• Abra em múltiplas abas para ver sincronização tempo real
+• Use em grupo para planejamento colaborativo
+• Gere a história ao final da viagem para guardar memórias
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    🆘 PRECISA DE AJUDA?                       ║
+╚═══════════════════════════════════════════════════════════════╝
+
+• Problemas de configuração? → Veja SETUP.md
+• Dúvidas sobre estrutura? → Veja ARCHITECTURE.md
+• Precisa de exemplos? → Veja EXAMPLES.md
+• Comandos úteis? → Veja COMMANDS.md
+
+╔═══════════════════════════════════════════════════════════════╗
+║                    🎊 PRONTO PARA USAR!                       ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Seu PWA está 100% funcional e pronto para:
+✅ Uso pessoal
+✅ Demonstração de portfólio
+✅ Deploy em produção
+✅ Base para projetos maiores
+
+──────────────────────────────────────────────────────────────────
+
+              🌍 Bora planejar sua próxima viagem! ✈️
+
+──────────────────────────────────────────────────────────────────
+
+Desenvolvido com ❤️ usando React + Vite + Firebase + TailwindCSS
+                 Metodologia: PTC FREE
+            Data: 19 de janeiro de 2026
+

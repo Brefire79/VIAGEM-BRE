@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-sand text-dark antialiased;
+  }
+}
+
+@layer components {
+  /* Card padrão */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-sand-300 p-6 transition-all hover:shadow-md;
+  }
+
+  /* Botão primário */
+  .btn-primary {
+    @apply bg-ocean text-white px-6 py-3 rounded-xl font-medium 
+           transition-all hover:bg-ocean-600 active:scale-95 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botão secundário */
+  .btn-secondary {
+    @apply bg-aqua text-white px-6 py-3 rounded-xl font-medium 
+           transition-all hover:bg-aqua-600 active:scale-95;
+  }
+
+  /* Botão outline */
+  .btn-outline {
+    @apply border-2 border-ocean text-ocean px-6 py-3 rounded-xl 
+           font-medium transition-all hover:bg-ocean-50 active:scale-95;
+  }
+
+  /* Input padrão */
+  .input {
+    @apply w-full px-4 py-3 border-2 border-sand-300 rounded-xl 
+           focus:outline-none focus:border-ocean transition-colors
+           placeholder:text-sand-500;
+  }
+
+  /* Badge/Tag */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Container mobile-first */
+  .container-mobile {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Empty state container */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    @apply animate-pulse-soft bg-sand-200 rounded-xl;
+  }
+
+  /* Success message */
+  .success-message {
+    @apply bg-green-50 border-2 border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2;
+  }
+
+  /* Error message */
+  .error-message {
+    @apply bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2;
+  }
+
+  /* Info message */
+  .info-message {
+    @apply bg-ocean-50 border-2 border-ocean-200 text-ocean-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2;
+  }
+
+  /* Floating Action Button */
+  .fab {
+    @apply fixed bottom-24 md:bottom-8 right-6 bg-ocean text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 z-40;
+  }
+
+  /* Card hover effect enhanced */
+  .card-interactive {
+    @apply card cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98];
+  }
+
+  /* Divider with text */
+  .divider {
+    @apply relative flex items-center justify-center my-6;
+  }
+
+  .divider::before,
+  .divider::after {
+    @apply content-[''] flex-1 h-px bg-sand-300;
+  }
+
+  .divider span {
+    @apply px-4 text-sm text-sand-500 font-medium;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply w-full h-2 bg-sand-200 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-gradient-to-r from-ocean to-aqua transition-all duration-500 ease-out;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply card bg-gradient-to-br text-white p-6;
+  }
+
+  /* Timeline dot */
+  .timeline-dot {
+    @apply w-3 h-3 rounded-full bg-ocean absolute left-0 top-2;
+  }
+
+  /* Badge variants */
+  .badge-success {
+    @apply badge bg-green-100 text-green-700;
+  }
+
+  .badge-warning {
+    @apply badge bg-orange-100 text-orange-700;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 text-red-700;
+  }
+
+  .badge-info {
+    @apply badge bg-ocean-100 text-ocean-700;
+  }
+}
+
+/* Animações suaves e microinterações */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 0.5s ease-out;
+  }
+
+  @keyframes bounceSubtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  /* Pulse suave para loading */
+  .animate-pulse-soft {
+    animation: pulseSoft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulseSoft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Slide from right para modais */
+  .animate-slide-right {
+    animation: slideRight 0.3s ease-out;
+  }
+
+  @keyframes slideRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Success checkmark animation */
+  .animate-check {
+    animation: check 0.5s ease-out;
+  }
+
+  @keyframes check {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-sand-200;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-ocean-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-ocean-400;
+}
