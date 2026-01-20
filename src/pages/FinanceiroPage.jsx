@@ -90,11 +90,25 @@ const FinanceiroPage = () => {
       alert('Selecione pelo menos uma pessoa para dividir a despesa');
       return;
     }
+    
+    if (!formData.date) {
+      alert('Por favor, selecione uma data para a despesa');
+      return;
+    }
 
+    // Cria data sem conversão de timezone
+    const [year, month, day] = formData.date.split('-').map(Number);
+    
+    // Validação de valores numéricos
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      alert('Data inválida. Verifique os valores inseridos.');
+      return;
+    }
+    
     const expenseData = {
       ...formData,
       amount: Number(formData.amount),
-      date: new Date(formData.date)
+      date: new Date(year, month - 1, day, 12, 0) // 12h meio-dia para evitar problemas de timezone
     };
 
     let result;
@@ -180,6 +194,11 @@ const FinanceiroPage = () => {
     );
   }
 
+  // Cálculo da situação do usuário atual
+  const userBalance = calculations.balance[user?.uid] || 0;
+  const userIsPositive = userBalance > 0;
+  const userIsZero = Math.abs(userBalance) < 0.01;
+
   return (
     <motion.div 
       className="max-w-6xl mx-auto"
@@ -196,7 +215,7 @@ const FinanceiroPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          Controle Financeiro
+          💰 Financeiro
         </motion.h1>
         <motion.p 
           className="text-sand-500"
@@ -204,193 +223,260 @@ const FinanceiroPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          Gerencie todas as despesas da viagem de forma transparente
+          Veja quanto gastou, quanto deve e quanto tem a receber
         </motion.p>
       </div>
 
-      {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* Total da viagem */}
-        <motion.div 
-          className="card bg-gradient-to-br from-ocean to-ocean-600 text-white"
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <motion.div 
-              className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-            >
-              <DollarSign className="w-6 h-6" />
-            </motion.div>
-            <span className="text-sm opacity-90">Total da Viagem</span>
-          </div>
+      {/* 1️⃣ TOPO – RESUMO ABSOLUTO */}
+      <motion.div 
+        className="card bg-gradient-to-br from-ocean to-ocean-700 text-white mb-6 p-6 md:p-8"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="text-center mb-4 md:mb-6">
+          <p className="text-xs md:text-sm opacity-80 uppercase tracking-wider mb-2">Total da Viagem</p>
           <motion.p 
-            className="text-3xl font-bold"
+            className="text-4xl md:text-5xl lg:text-6xl font-black"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring' }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
           >
             {formatCurrency(calculations.total)}
           </motion.p>
-        </motion.div>
+        </div>
 
-        {/* Total de despesas */}
-        <motion.div 
-          className="card bg-gradient-to-br from-aqua to-aqua-600 text-white"
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          custom={1}
-          whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <motion.div 
-              className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Receipt className="w-6 h-6" />
-            </motion.div>
-            <span className="text-sm opacity-90">Despesas</span>
-          </div>
-          <motion.p 
-            className="text-3xl font-bold"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.35, type: 'spring' }}
-          >
-            {expenses.length}
-          </motion.p>
-        </motion.div>
-
-        {/* Participantes */}
-        <motion.div 
-          className="card bg-gradient-to-br from-purple-500 to-purple-600 text-white"
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          custom={2}
-          whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <motion.div 
-              className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Users className="w-6 h-6" />
-            </motion.div>
-            <span className="text-sm opacity-90">Participantes</span>
-          </div>
-          <motion.p 
-            className="text-3xl font-bold"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.4, type: 'spring' }}
-          >
-            {participants.length}
-          </motion.p>
-        </motion.div>
-      </div>
-
-      {/* Total por categoria */}
-      <div className="card mb-6">
-        <h2 className="text-xl font-bold text-dark mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-ocean" />
-          Gastos por Categoria
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {Object.entries(categories).map(([key, { icon: Icon, label, color }]) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+          {Object.entries(categories).map(([key, { icon: Icon, label }], index) => {
             const amount = calculations.byCategory[key] || 0;
+            if (amount === 0) return null;
             const percentage = calculations.total > 0 ? (amount / calculations.total) * 100 : 0;
 
             return (
-              <div key={key} className="p-4 bg-sand-100 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`${color} w-8 h-8 rounded-lg flex items-center justify-center`}>
-                    <Icon className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-dark-100">{label}</span>
+              <motion.div 
+                key={key} 
+                className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + (index * 0.05) }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon className="w-4 h-4" />
+                  <span className="text-xs font-medium truncate">{label}</span>
                 </div>
-                <p className="text-lg font-bold text-dark">{formatCurrency(amount)}</p>
-                <p className="text-xs text-sand-500">{percentage.toFixed(1)}% do total</p>
-              </div>
+                <p className="text-base md:text-lg font-bold truncate">{formatCurrency(amount)}</p>
+                <p className="text-xs opacity-75">{percentage.toFixed(0)}%</p>
+              </motion.div>
             );
           })}
         </div>
-      </div>
 
-      {/* Balanço por pessoa */}
-      <div className="card mb-6">
-        <h2 className="text-xl font-bold text-dark mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-ocean" />
-          Balanço por Pessoa
+        <div className="flex justify-center gap-6 md:gap-8 text-center pt-4 border-t border-white border-opacity-30">
+          <div>
+            <p className="text-xs opacity-80 mb-1">Despesas</p>
+            <p className="text-xl md:text-2xl font-bold">{expenses.length}</p>
+          </div>
+          <div>
+            <p className="text-xs opacity-80 mb-1">Participantes</p>
+            <p className="text-xl md:text-2xl font-bold">{participants.length}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 2️⃣ BLOCO "SUA SITUAÇÃO" */}
+      <motion.div 
+        className={`card mb-6 border-4 ${
+          userIsZero 
+            ? 'border-green-300 bg-green-50' 
+            : userIsPositive 
+            ? 'border-green-400 bg-green-50' 
+            : 'border-orange-400 bg-orange-50'
+        }`}
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5, type: 'spring' }}
+      >
+        <div className="text-center py-4 md:py-6">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.7, type: 'spring', stiffness: 300 }}
+          >
+            {userIsZero ? (
+              <>
+                <div className="text-5xl md:text-6xl mb-3 md:mb-4">✅</div>
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-green-700 mb-2">
+                  Tudo certo!
+                </h2>
+                <p className="text-sm md:text-base lg:text-lg text-green-600 px-4">
+                  Você está quitado. Ninguém deve nada para você e você não deve nada.
+                </p>
+              </>
+            ) : userIsPositive ? (
+              <>
+                <div className="text-5xl md:text-6xl mb-3 md:mb-4">💚</div>
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-green-700 mb-2">
+                  Você tem a receber
+                </h2>
+                <motion.p 
+                  className="text-3xl md:text-4xl lg:text-5xl font-black text-green-600"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.9, type: 'spring' }}
+                >
+                  {formatCurrency(userBalance)}
+                </motion.p>
+                <p className="text-xs md:text-sm text-green-600 mt-2 px-4">
+                  Você pagou mais do que sua parte
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-5xl md:text-6xl mb-3 md:mb-4">💸</div>
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-orange-700 mb-2">
+                  Você deve
+                </h2>
+                <motion.p 
+                  className="text-3xl md:text-4xl lg:text-5xl font-black text-orange-600"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.9, type: 'spring' }}
+                >
+                  {formatCurrency(Math.abs(userBalance))}
+                </motion.p>
+                <p className="text-xs md:text-sm text-orange-600 mt-2 px-4">
+                  Outros pagaram por você
+                </p>
+              </>
+            )}
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* 3️⃣ RESUMO POR PESSOA */}
+      <motion.div 
+        className="card mb-6"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <h2 className="text-2xl font-bold text-dark mb-6 flex items-center gap-3">
+          <Users className="w-7 h-7 text-ocean" />
+          Resumo por Pessoa
         </h2>
-        <div className="space-y-3">
-          {Object.entries(calculations.balance).map(([personId, balance]) => {
+        <div className="space-y-4">
+          {Object.entries(calculations.balance)
+            .sort((a, b) => b[1] - a[1]) // Ordena: quem recebe primeiro
+            .map(([personId, balance], index) => {
             const paid = calculations.paidByPerson[personId] || 0;
             const shouldPay = calculations.shouldPayPerPerson[personId] || 0;
             const isPositive = balance > 0;
             const isZero = Math.abs(balance) < 0.01;
+            const isCurrentUser = personId === user?.uid;
 
             return (
-              <div key={personId} className="p-4 bg-sand-100 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-dark">{getParticipantName(personId)}</span>
-                  <span className={`text-lg font-bold ${
-                    isZero ? 'text-sand-500' : isPositive ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {isZero ? 'Quitado' : isPositive ? `+${formatCurrency(balance)}` : formatCurrency(balance)}
-                  </span>
+              <motion.div 
+                key={personId} 
+                className={`p-6 rounded-2xl border-2 ${
+                  isCurrentUser 
+                    ? 'bg-ocean-50 border-ocean-300' 
+                    : 'bg-sand-50 border-sand-200'
+                }`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + (index * 0.05) }}
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Nome */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg md:text-xl font-bold text-dark mb-1 flex flex-wrap items-center gap-2">
+                      <span className="truncate">{getParticipantName(personId)}</span>
+                      {isCurrentUser && (
+                        <span className="text-xs bg-ocean text-white px-2 py-1 rounded-full whitespace-nowrap">
+                          Você
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs md:text-sm text-sand-500">
+                      Pagou {formatCurrency(paid)} • Deveria pagar {formatCurrency(shouldPay)}
+                    </p>
+                  </div>
+
+                  {/* Saldo */}
+                  <div className="text-right md:text-center shrink-0">
+                    <p className="text-xs text-sand-500 mb-1">Saldo</p>
+                    <p className={`text-2xl md:text-3xl font-black ${
+                      isZero 
+                        ? 'text-green-600' 
+                        : isPositive 
+                        ? 'text-green-600' 
+                        : 'text-orange-600'
+                    }`}>
+                      {isZero ? '✓ R$ 0' : isPositive ? `+ ${formatCurrency(balance)}` : `- ${formatCurrency(Math.abs(balance))}`}
+                    </p>
+                    <p className="text-xs text-sand-600 mt-1">
+                      {isZero ? 'Quitado' : isPositive ? 'Tem a receber' : 'Deve pagar'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-sand-500">
-                  <span>Pagou: {formatCurrency(paid)}</span>
-                  <span>Deve pagar: {formatCurrency(shouldPay)}</span>
-                </div>
-                {!isZero && (
-                  <p className="text-xs mt-2 text-dark-50">
-                    {isPositive 
-                      ? '✅ Receberá dos demais participantes'
-                      : '⚠️ Precisa acertar com quem pagou mais'
-                    }
-                  </p>
-                )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Botão adicionar despesa */}
-      <button
+      <motion.button
         onClick={() => handleOpenModal()}
-        className="btn-primary w-full sm:w-auto mb-6"
+        className="btn-primary w-full sm:w-auto mb-6 shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.98 }}
       >
         <Plus className="w-5 h-5 inline mr-2" />
         Adicionar Despesa
-      </button>
+      </motion.button>
 
       {/* Lista de despesas */}
       {expenses.length === 0 ? (
-        <div className="card text-center py-12">
+        <motion.div 
+          className="card text-center py-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+        >
           <Receipt className="w-16 h-16 text-sand-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-dark mb-2">Nenhuma despesa ainda</h3>
           <p className="text-sand-500">Adicione a primeira despesa da viagem</p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="space-y-3">
-          {expenses.map(expense => {
+        <motion.div 
+          className="card"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
+          <h2 className="text-xl font-bold text-dark mb-4 flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-ocean" />
+            Todas as Despesas ({expenses.length})
+          </h2>
+          <div className="space-y-3">
+          {expenses.map((expense, index) => {
             const CategoryIcon = categories[expense.category].icon;
             const categoryColor = categories[expense.category].color;
             const expenseDate = expense.date?.toDate?.() || new Date(expense.date);
 
             return (
-              <div key={expense.id} className="card hover:shadow-lg transition-all animate-fade-in">
+              <motion.div 
+                key={expense.id} 
+                className="p-4 bg-sand-50 hover:bg-sand-100 rounded-xl transition-all"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1 + (index * 0.05) }}
+                whileHover={{ x: 4 }}
+              >
                 <div className="flex gap-4">
                   {/* Ícone */}
                   <div className={`${categoryColor} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -416,18 +502,22 @@ const FinanceiroPage = () => {
                       
                       {/* Ações */}
                       <div className="flex gap-1">
-                        <button
+                        <motion.button
                           onClick={() => handleOpenModal(expense)}
-                          className="p-2 hover:bg-sand-200 rounded-lg transition-all"
+                          className="p-2 hover:bg-ocean-50 rounded-lg transition-all"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
                         >
                           <Edit2 className="w-4 h-4 text-ocean" />
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
                           onClick={() => handleDeleteExpense(expense.id)}
                           className="p-2 hover:bg-red-50 rounded-lg transition-all"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
-                        </button>
+                        </motion.button>
                       </div>
                     </div>
 
@@ -443,10 +533,11 @@ const FinanceiroPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+          </div>
+        </motion.div>
       )}
 
       {/* Modal de adicionar/editar despesa */}

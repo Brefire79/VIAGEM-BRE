@@ -32,7 +32,7 @@ export const mockEvents = [
     type: 'voo',
     title: 'Voo São Paulo → Paris',
     description: 'Air France AF456 - Saída às 22:30',
-    date: new Date('2026-03-15T22:30:00'),
+    date: new Date(2026, 2, 15, 22, 30), // 15 de março de 2026, 22:30
     time: '22:30',
     location: 'Aeroporto GRU - Terminal 3',
     createdBy: 'user-123',
@@ -44,7 +44,7 @@ export const mockEvents = [
     type: 'transfer',
     title: 'Transfer Aeroporto → Hotel',
     description: 'Uber reservado pelo app',
-    date: new Date('2026-03-16T11:00:00'),
+    date: new Date(2026, 2, 16, 11, 0), // 16 de março de 2026, 11:00
     time: '11:00',
     location: 'Aeroporto Charles de Gaulle',
     createdBy: 'user-123',
@@ -56,7 +56,7 @@ export const mockEvents = [
     type: 'hospedagem',
     title: 'Check-in Hotel Le Marais',
     description: 'Reserva confirmada - Quarto duplo com vista',
-    date: new Date('2026-03-16T14:00:00'),
+    date: new Date(2026, 2, 16, 14, 0), // 16 de março de 2026, 14:00
     time: '14:00',
     location: 'Rue de Rivoli, 75004 Paris',
     createdBy: 'user-123',
@@ -68,7 +68,7 @@ export const mockEvents = [
     type: 'passeio',
     title: 'Torre Eiffel',
     description: 'Ingressos para o topo - Horário reservado',
-    date: new Date('2026-03-17T10:00:00'),
+    date: new Date(2026, 2, 17, 10, 0), // 17 de março de 2026, 10:00
     time: '10:00',
     location: 'Champ de Mars, Paris',
     createdBy: 'user-456',
@@ -80,7 +80,7 @@ export const mockEvents = [
     type: 'alimentacao',
     title: 'Almoço no Le Jules Verne',
     description: 'Restaurante na Torre Eiffel - Mesa reservada',
-    date: new Date('2026-03-17T13:00:00'),
+    date: new Date(2026, 2, 17, 13, 0), // 17 de março de 2026, 13:00
     time: '13:00',
     location: 'Torre Eiffel, 2º andar',
     createdBy: 'user-456',
@@ -92,7 +92,7 @@ export const mockEvents = [
     type: 'passeio',
     title: 'Museu do Louvre',
     description: 'Tour guiado em português - Mona Lisa e obras principais',
-    date: new Date('2026-03-18T09:00:00'),
+    date: new Date(2026, 2, 18, 9, 0), // 18 de março de 2026, 09:00
     time: '09:00',
     location: 'Rue de Rivoli, 75001 Paris',
     createdBy: 'user-123',
@@ -104,7 +104,7 @@ export const mockEvents = [
     type: 'passeio',
     title: 'Cruzeiro no Rio Sena',
     description: 'Passeio ao pôr do sol com jantar incluído',
-    date: new Date('2026-03-19T18:30:00'),
+    date: new Date(2026, 2, 19, 18, 30), // 19 de março de 2026, 18:30
     time: '18:30',
     location: 'Port de la Bourdonnais',
     createdBy: 'user-456',
@@ -116,7 +116,7 @@ export const mockEvents = [
     type: 'passeio',
     title: 'Versalhes',
     description: 'Palácio de Versalhes e jardins - Day trip',
-    date: new Date('2026-03-20T08:00:00'),
+    date: new Date(2026, 2, 20, 8, 0), // 20 de março de 2026, 08:00
     time: '08:00',
     location: 'Château de Versailles',
     createdBy: 'user-123',
@@ -128,7 +128,7 @@ export const mockEvents = [
     type: 'transfer',
     title: 'Transfer Hotel → Aeroporto',
     description: 'Uber agendado',
-    date: new Date('2026-03-22T08:00:00'),
+    date: new Date(2026, 2, 22, 8, 0), // 22 de março de 2026, 08:00
     time: '08:00',
     location: 'Hotel Le Marais',
     createdBy: 'user-123',
@@ -140,7 +140,7 @@ export const mockEvents = [
     type: 'voo',
     title: 'Voo Paris → São Paulo',
     description: 'Air France AF459 - Decolagem às 11:45',
-    date: new Date('2026-03-22T11:45:00'),
+    date: new Date(2026, 2, 22, 11, 45), // 22 de março de 2026, 11:45
     time: '11:45',
     location: 'Aeroporto Charles de Gaulle',
     createdBy: 'user-123',

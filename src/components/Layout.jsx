@@ -130,24 +130,25 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container-mobile py-6">
+      <main className="flex-1 container-mobile py-4 md:py-6 pb-20 md:pb-6">
         {children}
       </main>
 
-      {/* Bottom Navigation (Mobile) */}
-      <nav className="md:hidden bg-white border-t border-sand-300 sticky bottom-0 z-50">
-        <div className="flex items-center justify-around py-2">
+      {/* Bottom Navigation (Mobile) - Safe area support */}
+      <nav className="md:hidden bg-white border-t border-sand-300 fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+        <div className="flex items-center justify-around py-2 pb-safe">
           {navItems.map(({ path, icon: Icon, label }) => (
             <Link
               key={path}
               to={path}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] ${
                 location.pathname === path
                   ? 'text-ocean'
                   : 'text-sand-500'
               }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <Icon className="w-6 h-6" />
+              <Icon className="w-6 h-6" strokeWidth={location.pathname === path ? 2.5 : 2} />
               <span className="text-xs font-medium">{label}</span>
             </Link>
           ))}

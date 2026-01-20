@@ -14,14 +14,17 @@ export default defineConfig({
         short_name: 'Viagem',
         description: 'Planeje sua viagem de forma colaborativa com controle financeiro completo',
         theme_color: '#0EA5E9',
-        background_color: '#F8FAFC',
+        background_color: '#FAF8F6',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'portrait-primary',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
@@ -38,15 +41,16 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'firestore-cache',
+              networkTimeoutSeconds: 10,
               expiration: {
-                maxEntries: 10,
+                maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas
               },
               cacheableResponse: {

@@ -34,9 +34,27 @@ const RoteiroPage = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Validação de data
+    if (!formData.date) {
+      alert('Por favor, selecione uma data para o evento');
+      setLoading(false);
+      return;
+    }
+    
+    // Criar data local sem conversão de timezone
+    const [year, month, day] = formData.date.split('-').map(Number);
+    const [hours, minutes] = (formData.time || '00:00').split(':').map(Number);
+    
+    // Validação de valores numéricos
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+      alert('Data ou horário inválido. Verifique os valores inseridos.');
+      setLoading(false);
+      return;
+    }
+    
     const eventData = {
       ...formData,
-      date: new Date(`${formData.date}T${formData.time || '00:00'}`)
+      date: new Date(year, month - 1, day, hours, minutes)
     };
 
     let result;

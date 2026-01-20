@@ -1,16 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTrip } from '../contexts/TripContext';
 import { useAuth } from '../contexts/AuthContext';
-import { BookOpen, Sparkles, Download, Copy, Check } from 'lucide-react';
+import { BookOpen, Sparkles, Download, Copy, Check, Save, FileText, File } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { pageVariants, storyParagraphVariants, buttonVariants } from '../utils/motionVariants';
+import { pageVariants, storyParagraphVariants, buttonVariants, modalOverlayVariants, modalContentVariants } from '../utils/motionVariants';
 
 const HistoriaPage = () => {
   const { user } = useAuth();
   const { currentTrip, events, expenses, participants } = useTrip();
   const [copied, setCopied] = useState(false);
+  const [showSaveMenu, setShowSaveMenu] = useState(false);
 
   // Gera a história da viagem
   const tripStory = useMemo(() => {
@@ -169,6 +170,39 @@ const HistoriaPage = () => {
     }
   };
 
+  const handleSaveAsText = () => {
+    if (tripStory) {
+      // Remove markdown formatting para texto puro
+      const plainText = tripStory
+        .replace(/^#+ /gm, '')
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/\*(.+?)\*/g, '$1')
+        .replace(/^- /gm, '• ');
+
+      const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `historia-viagem-${currentTrip.name?.replace(/\s+/g, '-').toLowerCase() || 'viagem'}-${format(new Date(), 'yyyy-MM-dd')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowSaveMenu(false);
+    }
+  };
+
+  const handleSaveAsMarkdown = () => {
+    handleDownload();
+    setShowSaveMenu(false);
+  };
+
+  const handleSaveAsPDF = () => {
+    // Placeholder para futura implementação com jsPDF ou similar
+    alert('🚧 Exportação em PDF será implementada em breve!\n\nPor enquanto, você pode:\n• Salvar como texto (.txt)\n• Salvar como Markdown (.md)\n• Copiar e colar em um editor de texto');
+    setShowSaveMenu(false);
+  };
+
   // Preview da história em HTML com animação
   const renderStory = (markdown) => {
     // Divide o markdown em seções (por títulos ##)
@@ -276,9 +310,78 @@ const HistoriaPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
+        {/* Botão principal: Salvar História */}
+        <div className="relative">
+          <motion.button
+            onClick={() => setShowSaveMenu(!showSaveMenu)}
+            className="btn-primary flex items-center gap-2 shadow-md"
+            variants={buttonVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <Save className="w-5 h-5" />
+            Salvar história da viagem
+          </motion.button>
+
+          {/* Menu dropdown de opções de salvamento */}
+          <AnimatePresence>
+            {showSaveMenu && (
+              <motion.div
+                className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-sand-200 overflow-hidden z-10"
+                variants={modalContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="p-2">
+                  <motion.button
+                    onClick={handleSaveAsText}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sand-50 transition-colors text-left"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FileText className="w-5 h-5 text-ocean" />
+                    <div>
+                      <div className="font-medium text-dark">Texto simples (.txt)</div>
+                      <div className="text-xs text-sand-500">Sem formatação</div>
+                    </div>
+                  </motion.button>
+
+                  <motion.button
+                    onClick={handleSaveAsMarkdown}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sand-50 transition-colors text-left"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <File className="w-5 h-5 text-ocean" />
+                    <div>
+                      <div className="font-medium text-dark">Markdown (.md)</div>
+                      <div className="text-xs text-sand-500">Com formatação</div>
+                    </div>
+                  </motion.button>
+
+                  <motion.button
+                    onClick={handleSaveAsPDF}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sand-50 transition-colors text-left opacity-60"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Download className="w-5 h-5 text-sand-400" />
+                    <div>
+                      <div className="font-medium text-dark">PDF (.pdf)</div>
+                      <div className="text-xs text-sand-500">Em breve 🚧</div>
+                    </div>
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <motion.button
           onClick={handleCopy}
-          className="btn-primary flex items-center gap-2"
+          className="btn-secondary flex items-center gap-2"
           variants={buttonVariants}
           initial="rest"
           whileHover="hover"
@@ -296,18 +399,20 @@ const HistoriaPage = () => {
             </>
           )}
         </motion.button>
-        <motion.button
-          onClick={handleDownload}
-          className="btn-secondary flex items-center gap-2"
-          variants={buttonVariants}
-          initial="rest"
-          whileHover="hover"
-          whileTap="tap"
-        >
-          <Download className="w-5 h-5" />
-          Baixar (.md)
-        </motion.button>
       </motion.div>
+
+      {/* Overlay para fechar menu ao clicar fora */}
+      <AnimatePresence>
+        {showSaveMenu && (
+          <motion.div
+            className="fixed inset-0 z-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSaveMenu(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Preview da história com animação progressiva */}
       <motion.div 

@@ -3,8 +3,28 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
   body {
     @apply bg-sand text-dark antialiased;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  /* Prevenir zoom em inputs no iOS */
+  input, textarea, select {
+    font-size: 16px !important;
   }
 }
 
@@ -38,6 +58,9 @@
     @apply w-full px-4 py-3 border-2 border-sand-300 rounded-xl 
            focus:outline-none focus:border-ocean transition-colors
            placeholder:text-sand-500;
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   /* Badge/Tag */
@@ -48,11 +71,13 @@
   /* Container mobile-first */
   .container-mobile {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    width: 100%;
   }
 
   /* Empty state container */
   .empty-state {
     @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+    min-height: 300px;
   }
 
   /* Loading skeleton */
@@ -275,4 +300,45 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-ocean-400;
+}
+
+/* Safe area support for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Otimizações de performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Landscape mode adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .container-mobile {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Touch-friendly target sizes */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

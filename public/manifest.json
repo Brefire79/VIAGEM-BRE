@@ -1,0 +1,19 @@
+{
+  "name": "Viagem Colaborativa",
+  "short_name": "Viagem",
+  "description": "Planeje viagens em grupo com controle financeiro completo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F6",
+  "theme_color": "#0EA5E9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["travel", "finance", "productivity"]
+}
