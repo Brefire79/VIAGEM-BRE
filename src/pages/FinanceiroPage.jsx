@@ -138,8 +138,6 @@ const FinanceiroPage = () => {
       result = await addExpense(expenseData);
     }
 
-    console.log('Resultado da despesa:', result);
-
     if (result.success) {
       handleCloseModal();
     } else {

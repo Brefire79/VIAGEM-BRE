@@ -1,36 +1,51 @@
 // Configuração do Firebase
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
-// ⚙️ MODO DE DESENVOLVIMENTO
-// Se true, não inicializa o Firebase (usa dados mock)
+// Validação de ambiente
+const isProduction = import.meta.env.PROD;
 const USE_MOCK_DATA = false;
 
-// Suas credenciais do Firebase (configure no arquivo .env)
+// Configuração do Firebase com fallbacks seguros
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'mock-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'mock-project.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'mock-project',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'mock-project.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:abcdef123456'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Inicializa o Firebase apenas se não estiver em modo mock
-let app, auth, db;
+// Validar se todas as variáveis estão presentes
+const isConfigValid = Object.values(firebaseConfig).every(val => val && val !== 'undefined');
 
-if (!USE_MOCK_DATA) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} else {
-  // Em modo mock, exporta objetos vazios para evitar erros
-  app = null;
-  auth = null;
-  db = null;
+// Inicializa o Firebase
+let app = null;
+let auth = null;
+let db = null;
+
+if (!USE_MOCK_DATA && isConfigValid) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    // Habilitar persistência offline (IndexedDB)
+    if (typeof window !== 'undefined' && db) {
+      enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+          // Múltiplas abas abertas, persistência só funciona em uma aba
+        } else if (err.code === 'unimplemented') {
+          // Navegador não suporta persistência
+        }
+      });
+    }
+  } catch (error) {
+    // Silenciosamente falha se Firebase não inicializar
+  }
 }
 
-// Exporta as instâncias
+// Exporta as instâncias (podem ser null em modo mock ou erro)
 export { auth, db };
 export default app;

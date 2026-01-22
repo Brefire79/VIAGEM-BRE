@@ -69,16 +69,12 @@ const RoteiroPage = () => {
       date: new Date(year, month - 1, day, hours, minutes)
     };
 
-    console.log('Enviando evento:', eventData);
-
     let result;
     if (editingEvent) {
       result = await updateEvent(editingEvent.id, eventData);
     } else {
       result = await addEvent(eventData);
     }
-
-    console.log('Resultado do evento:', result);
 
     setLoading(false);
     

@@ -3,17 +3,36 @@
   "short_name": "Viagem",
   "description": "Planeje viagens em grupo com controle financeiro completo",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FAF8F6",
   "theme_color": "#0EA5E9",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/vite.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["travel", "finance", "productivity"]
+  "categories": ["travel", "finance", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Roteiro",
+      "url": "/roteiro",
+      "description": "Ver roteiro da viagem"
+    },
+    {
+      "name": "Financeiro",
+      "url": "/financeiro",
+      "description": "Controle financeiro"
+    }
+  ]
 }
