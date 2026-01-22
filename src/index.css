@@ -100,6 +100,27 @@
     @apply bg-ocean-50 border-2 border-ocean-200 text-ocean-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2;
   }
 
+  /* Modal overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40 backdrop-blur-sm;
+  }
+
+  /* Modal container */
+  .modal-container {
+    @apply fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+           bg-white rounded-2xl shadow-2xl z-50 w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto;
+  }
+
+  /* Modal header */
+  .modal-header {
+    @apply flex items-center justify-between p-6 border-b border-sand-200;
+  }
+
+  /* Modal close button */
+  .modal-close {
+    @apply p-2 hover:bg-sand-100 rounded-lg transition-colors text-dark-100;
+  }
+
   /* Floating Action Button */
   .fab {
     @apply fixed bottom-24 md:bottom-8 right-6 bg-ocean text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 z-40;
