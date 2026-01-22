@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, DollarSign, BookOpen, LogOut, Menu, X, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { iconButtonVariants } from '../utils/motionVariants';
 
 const Layout = ({ children }) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      const result = await logout();
+      if (result.success) {
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   const navItems = [

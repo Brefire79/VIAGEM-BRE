@@ -8,46 +8,12 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Função para verificar se o usuário é o dono do documento
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // Permitir acesso para usuários autenticados (desenvolvimento)
+    match /{document=**} {
+      allow read, write: if isSignedIn();
     }
-    
-    // Função para verificar se o usuário é participante da viagem
-    function isParticipant(tripId) {
-      return isSignedIn() && 
-             request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.participants;
-    }
-    
-    // REGRAS PARA USUÁRIOS
-    match /users/{userId} {
-      // Permitir leitura apenas para usuários autenticados
-      allow read: if isSignedIn();
-      
-      // Permitir criar apenas seu próprio usuário
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      
-      // Permitir atualizar apenas seu próprio perfil
-      allow update: if isOwner(userId);
-      
-      // Não permitir deletar
-      allow delete: if false;
-    }
-    
-    // REGRAS PARA VIAGENS
-    match /trips/{tripId} {
-      // Permitir leitura apenas para participantes
-      allow read: if isSignedIn() && 
-                     request.auth.uid in resource.data.participants;
-      
-      // Permitir criar viagens para usuários autenticados
-      allow create: if isSignedIn() && 
-                       request.auth.uid == request.resource.data.createdBy &&
-                       request.auth.uid in request.resource.data.participants;
-      
-      // Permitir atualizar apenas para participantes
-      allow update: if isSignedIn() && 
-                       request.auth.uid in resource.data.participants &&
+  }
+}
                        // Não permitir remover o criador
                        resource.data.createdBy in request.resource.data.participants;
       

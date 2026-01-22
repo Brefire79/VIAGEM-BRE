@@ -155,21 +155,122 @@ const RoteiroPage = () => {
 
   if (!currentTrip) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="empty-state animate-fade-in">
-          <div className="w-20 h-20 bg-ocean-50 rounded-full flex items-center justify-center mb-6 animate-bounce-subtle">
-            <Plane className="w-10 h-10 text-ocean" />
+      <>
+        <div className="max-w-4xl mx-auto">
+          <div className="empty-state animate-fade-in">
+            <div className="w-20 h-20 bg-ocean-50 rounded-full flex items-center justify-center mb-6 animate-bounce-subtle">
+              <Plane className="w-10 h-10 text-ocean" />
+            </div>
+            <h2 className="text-2xl font-bold text-dark mb-3">Nenhuma viagem encontrada</h2>
+            <p className="text-sand-500 mb-8 max-w-md">
+              Crie sua primeira viagem para começar a planejar momentos inesquecíveis
+            </p>
+            <button 
+              className="btn-primary" 
+              onClick={() => {
+                console.log('Botão clicado!');
+                setShowTripModal(true);
+              }}
+            >
+              <Plus className="w-5 h-5 inline mr-2" />
+              Criar primeira viagem
+            </button>
           </div>
-          <h2 className="text-2xl font-bold text-dark mb-3">Nenhuma viagem encontrada</h2>
-          <p className="text-sand-500 mb-8 max-w-md">
-            Crie sua primeira viagem para começar a planejar momentos inesquecíveis
-          </p>
-          <button className="btn-primary" onClick={() => setShowTripModal(true)}>
-            <Plus className="w-5 h-5 inline mr-2" />
-            Criar primeira viagem
-          </button>
         </div>
-      </div>
+
+        {/* Modal de Criação de Viagem */}
+        <AnimatePresence>
+          {showTripModal && (
+            <>
+              <motion.div
+                className="modal-overlay"
+                variants={modalOverlayVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={() => setShowTripModal(false)}
+              />
+              <motion.div
+                className="modal-container"
+                variants={modalContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="modal-header">
+                  <h2 className="text-2xl font-bold text-dark">Criar Nova Viagem</h2>
+                  <motion.button
+                    onClick={() => setShowTripModal(false)}
+                    className="modal-close"
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+
+                <form onSubmit={handleCreateTrip} className="space-y-5 p-6">
+                  {/* Nome da Viagem */}
+                  <div>
+                    <label className="block text-sm font-medium text-dark-100 mb-2">
+                      Nome da Viagem *
+                    </label>
+                    <input
+                      type="text"
+                      value={tripFormData.name}
+                      onChange={(e) => setTripFormData({ ...tripFormData, name: e.target.value })}
+                      className="input"
+                      placeholder="Ex: Viagem para Paris"
+                      required
+                    />
+                  </div>
+
+                  {/* Destino */}
+                  <div>
+                    <label className="block text-sm font-medium text-dark-100 mb-2">
+                      Destino *
+                    </label>
+                    <input
+                      type="text"
+                      value={tripFormData.destination}
+                      onChange={(e) => setTripFormData({ ...tripFormData, destination: e.target.value })}
+                      className="input"
+                      placeholder="Ex: Paris, França"
+                      required
+                    />
+                  </div>
+
+                  {/* Botões */}
+                  <div className="flex gap-3 pt-4">
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowTripModal(false)}
+                      className="btn-outline flex-1"
+                      variants={buttonVariants}
+                      initial="rest"
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button 
+                      type="submit" 
+                      className="btn-primary flex-1"
+                      variants={buttonVariants}
+                      initial="rest"
+                      whileHover="hover"
+                      whileTap="tap"
+                      disabled={loading}
+                    >
+                      {loading ? 'Criando...' : 'Criar Viagem'}
+                    </motion.button>
+                  </div>
+                </form>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </>
     );
   }
 
