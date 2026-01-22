@@ -12,7 +12,7 @@ import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modal
 
 const FinanceiroPage = () => {
   const { user } = useAuth();
-  const { expenses, addExpense, updateExpense, deleteExpense, currentTrip, participants } = useTrip();
+  const { expenses, addExpense, updateExpense, deleteExpense, currentTrip, participants, participantsData } = useTrip();
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
@@ -32,6 +32,21 @@ const FinanceiroPage = () => {
     passeios: { icon: MapPin, label: 'Passeios', color: 'bg-green-500' },
     alimentacao: { icon: UtensilsCrossed, label: 'Alimentação', color: 'bg-orange-500' },
     outros: { icon: MoreHorizontal, label: 'Outros', color: 'bg-gray-500' }
+  };
+
+  // Função auxiliar para pegar nome do participante
+  const getParticipantName = (uid) => {
+    return participantsData[uid]?.displayName || 'Carregando...';
+  };
+
+  // Função para alternar seleção de participante
+  const toggleParticipant = (participantId) => {
+    setFormData(prev => ({
+      ...prev,
+      splitBetween: prev.splitBetween.includes(participantId)
+        ? prev.splitBetween.filter(id => id !== participantId)
+        : [...prev.splitBetween, participantId]
+    }));
   };
 
   // Cálculos financeiros
@@ -160,26 +175,11 @@ const FinanceiroPage = () => {
     }
   };
 
-  const toggleParticipant = (participantId) => {
-    setFormData(prev => ({
-      ...prev,
-      splitBetween: prev.splitBetween.includes(participantId)
-        ? prev.splitBetween.filter(id => id !== participantId)
-        : [...prev.splitBetween, participantId]
-    }));
-  };
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
-
-  const getParticipantName = (userId) => {
-    // Em produção, você buscaria o nome real do usuário
-    if (userId === user?.uid) return 'Você';
-    return `Usuário ${userId.slice(0, 6)}`;
   };
 
   if (!currentTrip) {

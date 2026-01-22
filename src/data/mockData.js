@@ -13,12 +13,12 @@ export const mockUser = {
 // Viagem mock
 export const mockTrip = {
   id: 'trip-001',
-  name: 'Viagem para Paris',
-  destination: 'Paris, França',
-  startDate: new Date('2026-03-15'),
-  endDate: new Date('2026-03-22'),
-  participants: ['user-123', 'user-456'],
-  createdAt: new Date('2026-01-15')
+  name: 'Cartarenas das Indias',
+  destination: 'Cartagena, Colômbia',
+  startDate: new Date('2026-03-18'),
+  endDate: new Date('2026-03-25'),
+  participants: ['Breno', 'Claudia', 'Cesar', 'Nice'],
+  createdAt: new Date('2026-01-21')
 };
 
 // Participantes mock

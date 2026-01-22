@@ -9,7 +9,7 @@ import { pageVariants, storyParagraphVariants, buttonVariants, modalOverlayVaria
 
 const HistoriaPage = () => {
   const { user } = useAuth();
-  const { currentTrip, events, expenses, participants } = useTrip();
+  const { currentTrip, events, expenses, participants, participantsData } = useTrip();
   const [copied, setCopied] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
 
@@ -67,7 +67,19 @@ const HistoriaPage = () => {
     story += `# ${currentTrip.name || 'Nossa Viagem Inesquecível'}\n\n`;
     story += `## Uma Aventura de ${tripDuration} ${tripDuration === 1 ? 'Dia' : 'Dias'}\n\n`;
     story += `Entre ${format(firstDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })} e ${format(lastDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}, `;
-    story += `embarcamos em uma jornada memorável com ${participants.length} ${participants.length === 1 ? 'pessoa' : 'pessoas'}. `;
+    
+    // Lista de participantes com nomes
+    const participantNames = participants.map(id => participantsData[id]?.displayName || id.substring(0, 8));
+    if (participantNames.length === 1) {
+      story += `${participantNames[0]} embarcou `;
+    } else if (participantNames.length === 2) {
+      story += `${participantNames[0]} e ${participantNames[1]} embarcaram `;
+    } else {
+      const lastPerson = participantNames.pop();
+      story += `${participantNames.join(', ')} e ${lastPerson} embarcaram `;
+    }
+    
+    story += `em uma jornada memorável. `;
     story += `Esta é a história de como criamos memórias que vão durar para sempre.\n\n`;
 
     // Seção do roteiro
@@ -131,9 +143,54 @@ const HistoriaPage = () => {
       });
     story += `\n`;
 
-    const perPerson = totalSpent / participants.length;
-    story += `Dividindo igualmente, cada participante contribuiu com aproximadamente **${formatCurrency(perPerson)}** `;
-    story += `para fazer essa experiência acontecer.\n\n`;
+    // Cálculos financeiros detalhados por participante
+    const paidByPerson = expenses.reduce((acc, exp) => {
+      acc[exp.paidBy] = (acc[exp.paidBy] || 0) + Number(exp.amount);
+      return acc;
+    }, {});
+
+    const shouldPayPerPerson = expenses.reduce((acc, exp) => {
+      const splitCount = exp.splitBetween.length;
+      const amountPerPerson = Number(exp.amount) / splitCount;
+      
+      exp.splitBetween.forEach(personId => {
+        acc[personId] = (acc[personId] || 0) + amountPerPerson;
+      });
+      
+      return acc;
+    }, {});
+
+    const balance = {};
+    const allParticipants = [...new Set([...Object.keys(paidByPerson), ...Object.keys(shouldPayPerPerson)])];
+    
+    allParticipants.forEach(personId => {
+      const paid = paidByPerson[personId] || 0;
+      const shouldPay = shouldPayPerPerson[personId] || 0;
+      balance[personId] = paid - shouldPay;
+    });
+
+    // Resumo financeiro por pessoa
+    story += `### Resumo Financeiro por Participante\n\n`;
+    allParticipants.forEach(personId => {
+      const participantName = participantsData[personId]?.displayName || personId.substring(0, 8);
+      const paid = paidByPerson[personId] || 0;
+      const shouldPay = shouldPayPerPerson[personId] || 0;
+      const balanceAmount = balance[personId];
+
+      story += `**${participantName}**\n`;
+      story += `- Pagou: ${formatCurrency(paid)}\n`;
+      story += `- Deve pagar: ${formatCurrency(shouldPay)}\n`;
+      
+      if (balanceAmount > 0.01) {
+        story += `- 💚 Deve receber: ${formatCurrency(balanceAmount)}\n`;
+      } else if (balanceAmount < -0.01) {
+        story += `- 🔴 Deve pagar: ${formatCurrency(Math.abs(balanceAmount))}\n`;
+      } else {
+        story += `- ✅ Está quite\n`;
+      }
+      story += `\n`;
+    });
+    story += `\n`;
 
     // Conclusão
     story += `## ✨ Reflexões Finais\n\n`;
@@ -146,7 +203,7 @@ const HistoriaPage = () => {
     story += `*História gerada automaticamente em ${format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}*\n`;
 
     return story;
-  }, [currentTrip, events, expenses, participants]);
+  }, [currentTrip, events, expenses, participants, participantsData]);
 
   const handleCopy = async () => {
     if (tripStory) {
@@ -229,7 +286,13 @@ const HistoriaPage = () => {
         // Parágrafos
         .replace(/^(?!<[h|l|u]|<\/|<hr)(.+)$/gm, '<p class="mb-4 text-dark-50 leading-relaxed">$1</p>');
 
-      return { html, index };
+      // Sanitizar HTML para prevenir XSS
+      const sanitizedHtml = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'strong', 'em', 'ul', 'ol', 'li', 'hr'],
+        ALLOWED_ATTR: ['class']
+      });
+
+      return { html: sanitizedHtml, index };
     });
   };
 

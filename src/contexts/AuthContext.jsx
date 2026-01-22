@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockUser, delay } from '../data/mockData';
-
-// ⚙️ MODO DE DESENVOLVIMENTO
-export const USE_MOCK_DATA = true;
+import { 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 // Contexto de autenticação
 const AuthContext = createContext({});
@@ -23,32 +28,75 @@ export const AuthProvider = ({ children }) => {
 
   // Monitora mudanças no estado de autenticação
   useEffect(() => {
-    // Simula login automático em modo mock
-    setTimeout(() => {
-      setUser(mockUser);
+    if (!auth) {
       setLoading(false);
-    }, 500);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   // Função de login
   const login = async (email, password) => {
-    await delay(500);
-    setUser(mockUser);
-    return { success: true, user: mockUser };
+    if (!auth) {
+      return { success: false, error: 'Firebase não configurado' };
+    }
+
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return { success: true, user: result.user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   // Função de registro
   const register = async (email, password, displayName) => {
-    await delay(500);
-    setUser(mockUser);
-    return { success: true, user: mockUser };
+    if (!auth || !db) {
+      return { success: false, error: 'Firebase não configurado' };
+    }
+
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Atualiza o nome do usuário no Auth
+      if (displayName) {
+        await updateProfile(result.user, { displayName });
+      }
+      
+      // Salva o usuário no Firestore
+      await setDoc(doc(db, 'users', result.user.uid), {
+        uid: result.user.uid,
+        displayName: displayName || '',
+        email: email,
+        photoURL: null,
+        createdAt: serverTimestamp(),
+        trips: []
+      });
+      
+      return { success: true, user: result.user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   // Função de logout
-  const signOut = async () => {
-    await delay(300);
-    setUser(null);
-    return { success: true };
+  const logout = async () => {
+    if (!auth) {
+      return { success: false, error: 'Firebase não configurado' };
+    }
+
+    try {
+      await firebaseSignOut(auth);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const value = {
@@ -56,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
-    signOut
+    logout
   };
 
   return (

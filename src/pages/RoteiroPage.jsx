@@ -7,11 +7,16 @@ import { ptBR } from 'date-fns/locale';
 import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modalContentVariants, successVariants } from '../utils/motionVariants';
 
 const RoteiroPage = () => {
-  const { events, addEvent, updateEvent, deleteEvent, currentTrip } = useTrip();
+  const { events, addEvent, updateEvent, deleteEvent, currentTrip, createTrip } = useTrip();
   const [showModal, setShowModal] = useState(false);
+  const [showTripModal, setShowTripModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [tripFormData, setTripFormData] = useState({
+    name: '',
+    destination: ''
+  });
   const [formData, setFormData] = useState({
     type: 'voo',
     title: '',
@@ -70,6 +75,27 @@ const RoteiroPage = () => {
       setSuccessMessage(editingEvent ? 'Evento atualizado!' : 'Evento adicionado!');
       setTimeout(() => setSuccessMessage(''), 3000);
       handleCloseModal();
+    }
+  };
+
+  const handleCreateTrip = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const result = await createTrip({
+      name: tripFormData.name,
+      destination: tripFormData.destination
+    });
+
+    setLoading(false);
+
+    if (result.success) {
+      setSuccessMessage('Viagem criada com sucesso!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setShowTripModal(false);
+      setTripFormData({ name: '', destination: '' });
+    } else {
+      alert('Erro ao criar viagem: ' + result.error);
     }
   };
 
@@ -138,7 +164,7 @@ const RoteiroPage = () => {
           <p className="text-sand-500 mb-8 max-w-md">
             Crie sua primeira viagem para começar a planejar momentos inesquecíveis
           </p>
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => setShowTripModal(true)}>
             <Plus className="w-5 h-5 inline mr-2" />
             Criar primeira viagem
           </button>
@@ -545,6 +571,99 @@ const RoteiroPage = () => {
           </motion.div>
         </motion.div>
       </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Criação de Viagem */}
+      <AnimatePresence>
+        {showTripModal && (
+          <>
+            <motion.div
+              className="modal-overlay"
+              variants={modalOverlayVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => setShowTripModal(false)}
+            />
+            <motion.div
+              className="modal-container"
+              variants={modalContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="modal-header">
+                <h2 className="text-2xl font-bold text-dark">Criar Nova Viagem</h2>
+                <motion.button
+                  onClick={() => setShowTripModal(false)}
+                  className="modal-close"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
+              </div>
+
+              <form onSubmit={handleCreateTrip} className="space-y-5 p-6">
+                {/* Nome da Viagem */}
+                <div>
+                  <label className="block text-sm font-medium text-dark-100 mb-2">
+                    Nome da Viagem *
+                  </label>
+                  <input
+                    type="text"
+                    value={tripFormData.name}
+                    onChange={(e) => setTripFormData({ ...tripFormData, name: e.target.value })}
+                    className="input"
+                    placeholder="Ex: Viagem para Paris"
+                    required
+                  />
+                </div>
+
+                {/* Destino */}
+                <div>
+                  <label className="block text-sm font-medium text-dark-100 mb-2">
+                    Destino *
+                  </label>
+                  <input
+                    type="text"
+                    value={tripFormData.destination}
+                    onChange={(e) => setTripFormData({ ...tripFormData, destination: e.target.value })}
+                    className="input"
+                    placeholder="Ex: Paris, França"
+                    required
+                  />
+                </div>
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-4">
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowTripModal(false)}
+                    className="btn-outline flex-1"
+                    variants={buttonVariants}
+                    initial="rest"
+                    whileHover="hover"
+                    whileTap="tap"
+                  >
+                    Cancelar
+                  </motion.button>
+                  <motion.button 
+                    type="submit" 
+                    className="btn-primary flex-1"
+                    variants={buttonVariants}
+                    initial="rest"
+                    whileHover="hover"
+                    whileTap="tap"
+                    disabled={loading}
+                  >
+                    {loading ? 'Criando...' : 'Criar Viagem'}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>

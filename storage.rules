@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Função para verificar se o usuário está autenticado
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar tipo de arquivo (imagens apenas)
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Função para verificar tamanho (máximo 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // PERFIS DE USUÁRIO
+    match /users/{userId}/{allPaths=**} {
+      // Permitir leitura para usuários autenticados
+      allow read: if isSignedIn();
+      
+      // Permitir upload apenas para o próprio usuário
+      allow write: if isSignedIn() && 
+                      request.auth.uid == userId &&
+                      isImage() &&
+                      isValidSize();
+      
+      // Permitir delete apenas para o próprio usuário
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // FOTOS DAS VIAGENS
+    match /trips/{tripId}/{allPaths=**} {
+      // Permitir leitura para usuários autenticados
+      allow read: if isSignedIn();
+      
+      // Permitir upload para usuários autenticados
+      allow write: if isSignedIn() &&
+                      isImage() &&
+                      isValidSize();
+      
+      // Permitir delete para usuários autenticados
+      allow delete: if isSignedIn();
+    }
+    
+    // Bloquear todo o resto
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

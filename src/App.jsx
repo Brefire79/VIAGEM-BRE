@@ -8,6 +8,7 @@ import AuthPage from './pages/AuthPage';
 import RoteiroPage from './pages/RoteiroPage';
 import FinanceiroPage from './pages/FinanceiroPage';
 import HistoriaPage from './pages/HistoriaPage';
+import GerenciarViagemPage from './pages/GerenciarViagemPage';
 
 // Componente de rota protegida
 const ProtectedRoute = ({ children }) => {
@@ -94,6 +95,19 @@ function AppRoutes() {
             <TripProvider>
               <Layout>
                 <HistoriaPage />
+              </Layout>
+            </TripProvider>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/gerenciar"
+        element={
+          <ProtectedRoute>
+            <TripProvider>
+              <Layout>
+                <GerenciarViagemPage />
               </Layout>
             </TripProvider>
           </ProtectedRoute>

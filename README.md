@@ -35,18 +35,51 @@ Um aplicativo Progressive Web App (PWA) moderno para planejamento colaborativo d
 
 ## 🚀 Como Começar
 
+> 📖 **IMPORTANTE**: Consulte os guias detalhados antes de começar:
+> - 📘 [GUIA-FIREBASE.md](GUIA-FIREBASE.md) - Guia completo de configuração (15-20 min)
+> - ✅ [CHECKLIST-FIREBASE.md](CHECKLIST-FIREBASE.md) - Checklist de progresso
+> - ⚡ [SETUP.md](SETUP.md) - Resumo rápido
+
 ### Pré-requisitos
 
-- Node.js 16+ instalado
-- Conta no Firebase (gratuita)
+- Node.js 18+ instalado
+- Conta Google/Gmail (para Firebase)
 - Editor de código (VS Code recomendado)
 
-### Instalação
+### Instalação Rápida
 
-1. **Clone ou navegue até o projeto**
+1. **Instalar dependências**
 ```powershell
-cd "c:\Users\Breno-Luis\OneDrive\Área de Trabalho\1 PROJETOS\viagem-Bre"
+npm install
 ```
+
+2. **Configurar Firebase**
+   
+Siga o guia completo: [GUIA-FIREBASE.md](GUIA-FIREBASE.md)
+
+Resumo dos passos principais:
+- Criar projeto no Firebase Console
+- Ativar Authentication (E-mail/Senha)
+- Ativar Firestore Database (Modo teste)
+- Copiar credenciais
+- Criar arquivo `.env` com as credenciais
+- Alterar `USE_MOCK_DATA = false` em `src/firebase.js`
+
+3. **Iniciar o servidor**
+```powershell
+npm run dev
+```
+
+4. **Abrir no navegador**
+```
+http://localhost:5173
+```
+
+5. **Criar primeira conta e viagem**
+   
+Ver instruções detalhadas no [GUIA-FIREBASE.md](GUIA-FIREBASE.md#-passo-8-criar-sua-primeira-conta)
+
+---
 
 2. **Instale as dependências**
 ```powershell

@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase/firestore';
 
 // ⚙️ MODO DE DESENVOLVIMENTO
 // Se true, não inicializa o Firebase (usa dados mock)
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 // Suas credenciais do Firebase (configure no arquivo .env)
 const firebaseConfig = {

@@ -1,0 +1,101 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função para verificar se o usuário está autenticado
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar se o usuário é o dono do documento
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Função para verificar se o usuário é participante da viagem
+    function isParticipant(tripId) {
+      return isSignedIn() && 
+             request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.participants;
+    }
+    
+    // REGRAS PARA USUÁRIOS
+    match /users/{userId} {
+      // Permitir leitura apenas para usuários autenticados
+      allow read: if isSignedIn();
+      
+      // Permitir criar apenas seu próprio usuário
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      
+      // Permitir atualizar apenas seu próprio perfil
+      allow update: if isOwner(userId);
+      
+      // Não permitir deletar
+      allow delete: if false;
+    }
+    
+    // REGRAS PARA VIAGENS
+    match /trips/{tripId} {
+      // Permitir leitura apenas para participantes
+      allow read: if isSignedIn() && 
+                     request.auth.uid in resource.data.participants;
+      
+      // Permitir criar viagens para usuários autenticados
+      allow create: if isSignedIn() && 
+                       request.auth.uid == request.resource.data.createdBy &&
+                       request.auth.uid in request.resource.data.participants;
+      
+      // Permitir atualizar apenas para participantes
+      allow update: if isSignedIn() && 
+                       request.auth.uid in resource.data.participants &&
+                       // Não permitir remover o criador
+                       resource.data.createdBy in request.resource.data.participants;
+      
+      // Permitir deletar apenas para o criador
+      allow delete: if isOwner(resource.data.createdBy);
+    }
+    
+    // REGRAS PARA EVENTOS
+    match /events/{eventId} {
+      // Permitir leitura para participantes da viagem
+      allow read: if isParticipant(resource.data.tripId);
+      
+      // Permitir criar para participantes da viagem
+      allow create: if isSignedIn() && 
+                       isParticipant(request.resource.data.tripId) &&
+                       request.auth.uid == request.resource.data.createdBy;
+      
+      // Permitir atualizar apenas para o criador ou participantes
+      allow update: if isParticipant(resource.data.tripId);
+      
+      // Permitir deletar apenas para o criador do evento
+      allow delete: if isOwner(resource.data.createdBy);
+    }
+    
+    // REGRAS PARA DESPESAS
+    match /expenses/{expenseId} {
+      // Permitir leitura para participantes da viagem
+      allow read: if isParticipant(resource.data.tripId);
+      
+      // Permitir criar para participantes da viagem
+      allow create: if isSignedIn() && 
+                       isParticipant(request.resource.data.tripId) &&
+                       // Validar que paidBy é um participante
+                       request.resource.data.paidBy in get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.participants &&
+                       // Validar que amount é positivo
+                       request.resource.data.amount > 0;
+      
+      // Permitir atualizar para participantes da viagem
+      allow update: if isParticipant(resource.data.tripId) &&
+                       request.resource.data.amount > 0;
+      
+      // Permitir deletar para participantes da viagem
+      allow delete: if isParticipant(resource.data.tripId);
+    }
+    
+    // Bloquear acesso a qualquer outra coleção
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

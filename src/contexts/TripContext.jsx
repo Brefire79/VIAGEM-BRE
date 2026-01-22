@@ -1,9 +1,22 @@
-import React, { createContext, useContext, useState } from 'react';
-import { mockTrip, mockEvents, mockExpenses, mockParticipants, delay, generateId } from '../data/mockData';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+  orderBy,
+  arrayUnion,
+  arrayRemove
+} from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from './AuthContext';
-
-// ⚙️ MODO DE DESENVOLVIMENTO
-export const USE_MOCK_DATA = true;
 
 // Contexto da viagem
 const TripContext = createContext({});
@@ -20,67 +33,358 @@ export const useTrip = () => {
 // Provider da viagem
 export const TripProvider = ({ children }) => {
   const { user } = useAuth();
-  const [currentTrip] = useState(mockTrip);
-  const [events, setEvents] = useState(mockEvents);
-  const [expenses, setExpenses] = useState(mockExpenses);
-  const [participants] = useState(mockParticipants);
-  const [loading] = useState(false);
+  const [currentTrip, setCurrentTrip] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [participantsData, setParticipantsData] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // Monitora a viagem atual do usuário
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    if (!db) {
+      setLoading(false);
+      return;
+    }
+
+    const tripsRef = collection(db, 'trips');
+    const q = query(
+      tripsRef, 
+      where('participants', 'array-contains', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const tripData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+        setCurrentTrip(tripData);
+        setParticipants(tripData.participants || []);
+      }
+      setLoading(false);
+    }, (error) => {
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, [user]);
+
+  // Monitora eventos da viagem
+  useEffect(() => {
+    if (!currentTrip || !db) return;
+
+    const eventsRef = collection(db, 'events');
+    const q = query(
+      eventsRef,
+      where('tripId', '==', currentTrip.id),
+      orderBy('date', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const eventsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setEvents(eventsData);
+    });
+
+    return unsubscribe;
+  }, [currentTrip]);
+
+  // Monitora despesas da viagem
+  useEffect(() => {
+    if (!currentTrip || !db) return;
+
+    const expensesRef = collection(db, 'expenses');
+    const q = query(
+      expensesRef,
+      where('tripId', '==', currentTrip.id),
+      orderBy('date', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const expensesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setExpenses(expensesData);
+    });
+
+    return unsubscribe;
+  }, [currentTrip]);
+
+  // Busca dados dos participantes
+  useEffect(() => {
+    if (!currentTrip || !db) return;
+    
+    const fetchParticipants = async () => {
+      const data = {};
+      for (const uid of currentTrip.participants) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            data[uid] = userDoc.data();
+          } else {
+            // Fallback se usuário não existe no Firestore
+            data[uid] = {
+              displayName: uid.substring(0, 8) + '...',
+              email: 'Usuário'
+            };
+          }
+        } catch (error) {
+
+          data[uid] = {
+            displayName: uid.substring(0, 8) + '...',
+            email: 'Usuário'
+          };
+        }
+      }
+      setParticipantsData(data);
+    };
+    
+    fetchParticipants();
+  }, [currentTrip]);
+
+  // ========== CRIAR VIAGEM ==========
+
+  const createTrip = async (tripData) => {
+    if (!user || !db) return { success: false, error: 'Usuário não autenticado' };
+
+    try {
+      const tripsRef = collection(db, 'trips');
+      const docRef = await addDoc(tripsRef, {
+        ...tripData,
+        participants: [user.uid],
+        createdBy: user.uid,
+        createdAt: serverTimestamp()
+      });
+      return { success: true, tripId: docRef.id };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ========== ATUALIZAR VIAGEM ==========
+
+  const updateTrip = async (tripId, tripData) => {
+    if (!user || !db) return { success: false, error: 'Usuário não autenticado' };
+
+    try {
+      const tripRef = doc(db, 'trips', tripId);
+      await updateDoc(tripRef, {
+        ...tripData,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ========== ADICIONAR PARTICIPANTE ==========
+
+  const addParticipant = async (tripId, participantEmail) => {
+    if (!user || !db) return { success: false, error: 'Usuário não autenticado' };
+
+    try {
+      // Validação de entrada
+      if (!participantEmail || !participantEmail.includes('@')) {
+        throw new Error('E-mail inválido');
+      }
+
+      // Verificar se o usuário atual é participante da viagem
+      const tripRef = doc(db, 'trips', tripId);
+      const tripDoc = await getDoc(tripRef);
+      
+      if (!tripDoc.exists()) {
+        throw new Error('Viagem não encontrada');
+      }
+
+      const tripData = tripDoc.data();
+      if (!tripData.participants.includes(user.uid)) {
+        throw new Error('Você não tem permissão para adicionar participantes');
+      }
+
+      // Buscar usuário pelo email
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', participantEmail.toLowerCase().trim()));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        throw new Error('Usuário não encontrado com este e-mail');
+      }
+
+      const userDoc = querySnapshot.docs[0];
+      const participantId = userDoc.id;
+
+      // Verificar se já é participante
+      if (tripData.participants.includes(participantId)) {
+        throw new Error('Este usuário já é participante da viagem');
+      }
+
+      // Adicionar participante
+      await updateDoc(tripRef, {
+        participants: arrayUnion(participantId),
+        updatedAt: serverTimestamp()
+      });
+
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // ========== REMOVER PARTICIPANTE ==========
+
+  const removeParticipant = async (tripId, participantId) => {
+    if (!user || !db) return { success: false, error: 'Usuário não autenticado' };
+
+    try {
+      // Verificar permissões
+      const tripRef = doc(db, 'trips', tripId);
+      const tripDoc = await getDoc(tripRef);
+      
+      if (!tripDoc.exists()) {
+        throw new Error('Viagem não encontrada');
+      }
+
+      const tripData = tripDoc.data();
+      
+      // Verificar se o usuário atual é participante
+      if (!tripData.participants.includes(user.uid)) {
+        throw new Error('Você não tem permissão para remover participantes');
+      }
+
+      // Não permitir remover o criador da viagem
+      if (participantId === tripData.createdBy) {
+        throw new Error('Não é possível remover o criador da viagem');
+      }
+
+      // Remover participante
+      await updateDoc(tripRef, {
+        participants: arrayRemove(participantId),
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
 
   // ========== OPERAÇÕES COM EVENTOS ==========
 
   const addEvent = async (eventData) => {
-    await delay(300);
-    const newEvent = {
-      ...eventData,
-      id: generateId(),
-      tripId: currentTrip.id,
-      createdBy: user.uid,
-      createdAt: new Date()
-    };
-    setEvents(prev => [...prev, newEvent]);
-    return { success: true, id: newEvent.id };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      const eventsRef = collection(db, 'events');
+      await addDoc(eventsRef, {
+        ...eventData,
+        tripId: currentTrip.id,
+        createdBy: user.uid,
+        createdAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const updateEvent = async (eventId, eventData) => {
-    await delay(300);
-    setEvents(prev => prev.map(event => 
-      event.id === eventId ? { ...event, ...eventData } : event
-    ));
-    return { success: true };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        ...eventData,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const deleteEvent = async (eventId) => {
-    await delay(300);
-    setEvents(prev => prev.filter(event => event.id !== eventId));
-    return { success: true };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      await deleteDoc(eventRef);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   // ========== OPERAÇÕES COM DESPESAS ==========
 
   const addExpense = async (expenseData) => {
-    await delay(300);
-    const newExpense = {
-      ...expenseData,
-      id: generateId(),
-      tripId: currentTrip.id,
-      createdAt: new Date()
-    };
-    setExpenses(prev => [...prev, newExpense]);
-    return { success: true, id: newExpense.id };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      // Validações de segurança
+      if (!expenseData.amount || expenseData.amount <= 0) {
+        throw new Error('Valor da despesa deve ser maior que zero');
+      }
+
+      if (!expenseData.paidBy || !participants.includes(expenseData.paidBy)) {
+        throw new Error('Pagador inválido');
+      }
+
+      if (!expenseData.splitBetween || expenseData.splitBetween.length === 0) {
+        throw new Error('Selecione pelo menos um participante para dividir a despesa');
+      }
+
+      // Validar que todos em splitBetween são participantes válidos
+      const invalidParticipants = expenseData.splitBetween.filter(
+        id => !participants.includes(id)
+      );
+      if (invalidParticipants.length > 0) {
+        throw new Error('Participantes inválidos na divisão');
+      }
+
+      const expensesRef = collection(db, 'expenses');
+      await addDoc(expensesRef, {
+        ...expenseData,
+        amount: Number(expenseData.amount), // Garantir que é número
+        tripId: currentTrip.id,
+        createdAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const updateExpense = async (expenseId, expenseData) => {
-    await delay(300);
-    setExpenses(prev => prev.map(expense => 
-      expense.id === expenseId ? { ...expense, ...expenseData } : expense
-    ));
-    return { success: true };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      const expenseRef = doc(db, 'expenses', expenseId);
+      await updateDoc(expenseRef, {
+        ...expenseData,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const deleteExpense = async (expenseId) => {
-    await delay(300);
-    setExpenses(prev => prev.filter(expense => expense.id !== expenseId));
-    return { success: true };
+    if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
+
+    try {
+      const expenseRef = doc(db, 'expenses', expenseId);
+      await deleteDoc(expenseRef);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const value = {
@@ -88,7 +392,12 @@ export const TripProvider = ({ children }) => {
     events,
     expenses,
     participants,
+    participantsData,
     loading,
+    createTrip,
+    updateTrip,
+    addParticipant,
+    removeParticipant,
     addEvent,
     updateEvent,
     deleteEvent,

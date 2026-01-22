@@ -1,5 +1,7 @@
 # 🎯 GUIA RÁPIDO DE CONFIGURAÇÃO
 
+> 💡 **Para um guia completo e detalhado**, consulte: [GUIA-FIREBASE.md](GUIA-FIREBASE.md)
+
 ## 🚀 Início Rápido (5 minutos)
 
 ### 1. Instalar dependências
@@ -9,7 +11,9 @@ npm install
 
 ### 2. Configurar Firebase
 
-#### Passo a passo detalhado:
+📖 **Guia Completo**: Consulte [GUIA-FIREBASE.md](GUIA-FIREBASE.md) para instruções detalhadas passo a passo.
+
+#### Resumo rápido:
 
 1. **Criar projeto no Firebase**
    - Acesse: https://console.firebase.google.com/
