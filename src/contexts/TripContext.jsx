@@ -280,6 +280,10 @@ export const TripProvider = ({ children }) => {
     if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
 
     try {
+      console.log('Adicionando evento:', eventData);
+      console.log('Trip ID:', currentTrip.id);
+      console.log('User ID:', user.uid);
+
       const eventsRef = collection(db, 'events');
       await addDoc(eventsRef, {
         ...eventData,
@@ -287,8 +291,10 @@ export const TripProvider = ({ children }) => {
         createdBy: user.uid,
         createdAt: serverTimestamp()
       });
+      console.log('Evento adicionado com sucesso!');
       return { success: true };
     } catch (error) {
+      console.error('Erro ao adicionar evento:', error);
       return { success: false, error: error.message };
     }
   };
@@ -297,13 +303,16 @@ export const TripProvider = ({ children }) => {
     if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
 
     try {
+      console.log('Atualizando evento:', eventId, eventData);
       const eventRef = doc(db, 'events', eventId);
       await updateDoc(eventRef, {
         ...eventData,
         updatedAt: serverTimestamp()
       });
+      console.log('Evento atualizado com sucesso!');
       return { success: true };
     } catch (error) {
+      console.error('Erro ao atualizar evento:', error);
       return { success: false, error: error.message };
     }
   };
@@ -369,13 +378,17 @@ export const TripProvider = ({ children }) => {
     if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
 
     try {
+      console.log('Atualizando despesa:', expenseId, expenseData);
       const expenseRef = doc(db, 'expenses', expenseId);
       await updateDoc(expenseRef, {
         ...expenseData,
+        amount: Number(expenseData.amount),
         updatedAt: serverTimestamp()
       });
+      console.log('Despesa atualizada com sucesso!');
       return { success: true };
     } catch (error) {
+      console.error('Erro ao atualizar despesa:', error);
       return { success: false, error: error.message };
     }
   };

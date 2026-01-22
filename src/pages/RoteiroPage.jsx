@@ -45,6 +45,13 @@ const RoteiroPage = () => {
       setLoading(false);
       return;
     }
+
+    // Validação de título
+    if (!formData.title || formData.title.trim() === '') {
+      alert('Por favor, digite um título para o evento');
+      setLoading(false);
+      return;
+    }
     
     // Criar data local sem conversão de timezone
     const [year, month, day] = formData.date.split('-').map(Number);
@@ -62,6 +69,8 @@ const RoteiroPage = () => {
       date: new Date(year, month - 1, day, hours, minutes)
     };
 
+    console.log('Enviando evento:', eventData);
+
     let result;
     if (editingEvent) {
       result = await updateEvent(editingEvent.id, eventData);
@@ -69,12 +78,16 @@ const RoteiroPage = () => {
       result = await addEvent(eventData);
     }
 
+    console.log('Resultado do evento:', result);
+
     setLoading(false);
     
     if (result.success) {
       setSuccessMessage(editingEvent ? 'Evento atualizado!' : 'Evento adicionado!');
       setTimeout(() => setSuccessMessage(''), 3000);
       handleCloseModal();
+    } else {
+      alert('Erro ao salvar evento: ' + (result.error || 'Erro desconhecido'));
     }
   };
 
@@ -128,6 +141,14 @@ const RoteiroPage = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingEvent(null);
+    setFormData({
+      type: 'voo',
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: ''
+    });
   };
 
   const handleDeleteEvent = async (eventId) => {
