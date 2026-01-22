@@ -111,6 +111,11 @@ const FinanceiroPage = () => {
       return;
     }
 
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      alert('Digite um valor válido para a despesa');
+      return;
+    }
+
     // Cria data sem conversão de timezone
     const [year, month, day] = formData.date.split('-').map(Number);
     
@@ -133,8 +138,12 @@ const FinanceiroPage = () => {
       result = await addExpense(expenseData);
     }
 
+    console.log('Resultado da despesa:', result);
+
     if (result.success) {
       handleCloseModal();
+    } else {
+      alert('Erro ao salvar despesa: ' + (result.error || 'Erro desconhecido'));
     }
   };
 

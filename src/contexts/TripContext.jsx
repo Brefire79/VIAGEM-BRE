@@ -326,13 +326,16 @@ export const TripProvider = ({ children }) => {
     if (!currentTrip || !db) return { success: false, error: 'Nenhuma viagem selecionada' };
 
     try {
+      console.log('Adicionando despesa:', expenseData);
+      console.log('Participantes atuais:', participants);
+
       // Validações de segurança
       if (!expenseData.amount || expenseData.amount <= 0) {
         throw new Error('Valor da despesa deve ser maior que zero');
       }
 
       if (!expenseData.paidBy || !participants.includes(expenseData.paidBy)) {
-        throw new Error('Pagador inválido');
+        throw new Error(`Pagador inválido. paidBy=${expenseData.paidBy}, participants=${participants}`);
       }
 
       if (!expenseData.splitBetween || expenseData.splitBetween.length === 0) {
@@ -344,7 +347,7 @@ export const TripProvider = ({ children }) => {
         id => !participants.includes(id)
       );
       if (invalidParticipants.length > 0) {
-        throw new Error('Participantes inválidos na divisão');
+        throw new Error(`Participantes inválidos na divisão: ${invalidParticipants}`);
       }
 
       const expensesRef = collection(db, 'expenses');
@@ -354,8 +357,10 @@ export const TripProvider = ({ children }) => {
         tripId: currentTrip.id,
         createdAt: serverTimestamp()
       });
+      console.log('Despesa adicionada com sucesso!');
       return { success: true };
     } catch (error) {
+      console.error('Erro ao adicionar despesa:', error);
       return { success: false, error: error.message };
     }
   };
