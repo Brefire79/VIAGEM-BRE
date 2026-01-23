@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 // Contexto de autenticação
@@ -49,8 +49,46 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Atualizar dados do usuário no Firestore
+      try {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          uid: result.user.uid,
+          displayName: result.user.displayName || '',
+          email: result.user.email,
+          photoURL: result.user.photoURL || null,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (firestoreError) {
+        console.warn('[WARN] Erro ao atualizar perfil no login:', firestoreError);
+      }
+      
+      console.log('[DEBUG] Login bem-sucedido, verificando convites pendentes...');
+      
+      // Verificar se este email tem convites pendentes (para usuários já criados)
+      const tripsRef = collection(db, 'trips');
+      const q = query(tripsRef, where('pendingParticipants', 'array-contains', email.toLowerCase().trim()));
+      const querySnapshot = await getDocs(q);
+
+      console.log('[DEBUG] Convites pendentes encontrados no login:', querySnapshot.size);
+
+      // Ativar participação em viagens pendentes
+      for (const tripDoc of querySnapshot.docs) {
+        console.log('[DEBUG] Ativando participação na viagem:', tripDoc.id);
+        const tripRef = doc(db, 'trips', tripDoc.id);
+        
+        await updateDoc(tripRef, {
+          participants: arrayUnion(result.user.uid),
+          pendingParticipants: arrayRemove(email.toLowerCase().trim()),
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log('[DEBUG] Participação ativada no login!');
+      }
+      
       return { success: true, user: result.user };
     } catch (error) {
+      console.error('[ERROR] Erro no login:', error);
       return { success: false, error: error.message };
     }
   };
@@ -78,9 +116,34 @@ export const AuthProvider = ({ children }) => {
         createdAt: serverTimestamp(),
         trips: []
       });
+
+      console.log('[DEBUG] Usuário criado, verificando convites pendentes...');
+      
+      // Verificar se este email tem convites pendentes em alguma viagem
+      const tripsRef = collection(db, 'trips');
+      const q = query(tripsRef, where('pendingParticipants', 'array-contains', email.toLowerCase().trim()));
+      const querySnapshot = await getDocs(q);
+
+      console.log('[DEBUG] Convites encontrados:', querySnapshot.size);
+
+      // Para cada viagem que tem este email como pendente
+      for (const tripDoc of querySnapshot.docs) {
+        console.log('[DEBUG] Ativando participação na viagem:', tripDoc.id);
+        const tripRef = doc(db, 'trips', tripDoc.id);
+        
+        // Adicionar o UID aos participants e remover o email dos pendentes
+        await updateDoc(tripRef, {
+          participants: arrayUnion(result.user.uid),
+          pendingParticipants: arrayRemove(email.toLowerCase().trim()),
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log('[DEBUG] Participação ativada com sucesso!');
+      }
       
       return { success: true, user: result.user };
     } catch (error) {
+      console.error('[ERROR] Erro no registro:', error);
       return { success: false, error: error.message };
     }
   };

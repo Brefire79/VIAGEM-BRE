@@ -20,7 +20,7 @@ const FinanceiroPage = () => {
     description: '',
     amount: '',
     paidBy: user?.uid || '',
-    splitBetween: [],
+    splitBetween: [], // Não mais preenchido automaticamente
     date: new Date().toISOString().split('T')[0],
     status: 'pago' // 'pago' ou 'pendente'
   });
@@ -94,6 +94,14 @@ const FinanceiroPage = () => {
       balance[personId] = paid - shouldPay;
     });
 
+    console.log('[DEBUG] Cálculo de despesas:', {
+      despesasPagas: paidExpenses.length,
+      total,
+      paidByPerson,
+      shouldPayPerPerson,
+      balance
+    });
+
     return {
       total,
       totalPending,
@@ -120,6 +128,16 @@ const FinanceiroPage = () => {
 
     if (!formData.amount || Number(formData.amount) <= 0) {
       alert('Digite um valor válido para a despesa');
+      return;
+    }
+
+    if (!formData.paidBy) {
+      alert('Por favor, selecione quem pagou');
+      return;
+    }
+
+    if (formData.splitBetween.length === 0) {
+      alert('Por favor, selecione pelo menos uma pessoa para dividir a despesa');
       return;
     }
 
@@ -201,7 +219,7 @@ const FinanceiroPage = () => {
         description: '',
         amount: '',
         paidBy: user?.uid || '',
-        splitBetween: participants,
+        splitBetween: [], // Começa vazio, usuário escolhe
         date: new Date().toISOString().split('T')[0],
         status: 'pago'
       });
@@ -641,8 +659,19 @@ const FinanceiroPage = () => {
 
       {/* Modal de adicionar/editar despesa */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-slide-up">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            // Só fecha se clicar no overlay, não no modal
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header do modal */}
             <div className="flex items-center justify-between p-6 border-b border-sand-300">
               <h2 className="text-2xl font-bold text-dark">

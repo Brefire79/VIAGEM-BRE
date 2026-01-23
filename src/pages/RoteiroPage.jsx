@@ -15,7 +15,9 @@ const RoteiroPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [tripFormData, setTripFormData] = useState({
     name: '',
-    destination: ''
+    destination: '',
+    startDate: '',
+    endDate: ''
   });
   const [formData, setFormData] = useState({
     type: 'voo',
@@ -143,6 +145,8 @@ const RoteiroPage = () => {
     if (result.success) {
       setSuccessMessage('Viagem criada com sucesso!');
       setTimeout(() => setSuccessMessage(''), 3000);
+      // Restaura scroll ao fechar modal após sucesso
+      document.body.style.overflow = '';
       setShowTripModal(false);
       setTripFormData({ name: '', destination: '' });
     } else {
@@ -198,10 +202,14 @@ const RoteiroPage = () => {
         location: ''
       });
     }
+    // Previne scroll ao abrir modal
+    document.body.style.overflow = 'hidden';
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
+    // Restaura scroll ao fechar
+    document.body.style.overflow = '';
     setShowModal(false);
     setEditingEvent(null);
     setFormData({
@@ -302,6 +310,8 @@ const RoteiroPage = () => {
               className="btn-primary" 
               onClick={() => {
                 console.log('Botão clicado!');
+                // Previne scroll ao abrir modal
+                document.body.style.overflow = 'hidden';
                 setShowTripModal(true);
               }}
             >
@@ -321,26 +331,37 @@ const RoteiroPage = () => {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                onClick={() => setShowTripModal(false)}
-              />
-              <motion.div
-                className="modal-container"
-                variants={modalContentVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
+                onClick={(e) => {
+                  // Só fecha se clicar no overlay, não no modal
+                  if (e.target === e.currentTarget) {
+                    document.body.style.overflow = '';
+                    setShowTripModal(false);
+                  }
+                }}
               >
-                <div className="modal-header">
-                  <h2 className="text-2xl font-bold text-dark">Criar Nova Viagem</h2>
-                  <motion.button
-                    onClick={() => setShowTripModal(false)}
-                    className="modal-close"
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <X className="w-5 h-5" />
-                  </motion.button>
-                </div>
+                <motion.div
+                  className="modal-container"
+                  variants={modalContentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="modal-header">
+                    <h2 className="text-2xl font-bold text-dark">Criar Nova Viagem</h2>
+                    <motion.button
+                      onClick={() => {
+                        // Restaura scroll ao fechar
+                        document.body.style.overflow = '';
+                        setShowTripModal(false);
+                      }}
+                      className="modal-close"
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <X className="w-5 h-5" />
+                    </motion.button>
+                  </div>
 
                 <form onSubmit={handleCreateTrip} className="space-y-5 p-6">
                   {/* Nome da Viagem */}
@@ -373,11 +394,44 @@ const RoteiroPage = () => {
                     />
                   </div>
 
+                  {/* Data de Início e Fim */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-dark-100 mb-2">
+                        Data de Início *
+                      </label>
+                      <input
+                        type="date"
+                        value={tripFormData.startDate}
+                        onChange={(e) => setTripFormData({ ...tripFormData, startDate: e.target.value })}
+                        className="input"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-dark-100 mb-2">
+                        Data de Fim *
+                      </label>
+                      <input
+                        type="date"
+                        value={tripFormData.endDate}
+                        onChange={(e) => setTripFormData({ ...tripFormData, endDate: e.target.value })}
+                        className="input"
+                        min={tripFormData.startDate}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   {/* Botões */}
                   <div className="flex gap-3 pt-4">
                     <motion.button
                       type="button"
-                      onClick={() => setShowTripModal(false)}
+                      onClick={() => {
+                        // Restaura scroll ao cancelar
+                        document.body.style.overflow = '';
+                        setShowTripModal(false);
+                      }}
                       className="btn-outline flex-1"
                       variants={buttonVariants}
                       initial="rest"
@@ -399,6 +453,7 @@ const RoteiroPage = () => {
                     </motion.button>
                   </div>
                 </form>
+                </motion.div>
               </motion.div>
             </>
           )}
@@ -649,15 +704,20 @@ const RoteiroPage = () => {
           <>
             {/* Overlay com blur */}
             <motion.div 
-              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="modal-overlay"
               variants={modalOverlayVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              onClick={handleCloseModal}
+              onClick={(e) => {
+                // Só fecha se clicar no overlay, não no modal
+                if (e.target === e.currentTarget) {
+                  handleCloseModal();
+                }
+              }}
             >
               <motion.div 
-                className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                className="modal-container"
                 variants={modalContentVariants}
                 initial="hidden"
                 animate="visible"
@@ -665,18 +725,18 @@ const RoteiroPage = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header do modal */}
-                <div className="flex items-center justify-between p-6 border-b border-sand-300">
+                <div className="modal-header">
                   <h2 className="text-2xl font-bold text-dark">
                     {editingEvent ? 'Editar Evento' : 'Novo Evento'}
                   </h2>
                   <motion.button
                     type="button"
                     onClick={handleCloseModal}
-                    className="p-2 hover:bg-sand-200 rounded-lg transition-all"
+                    className="modal-close"
                     whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    <X className="w-5 h-5 text-dark" />
+                    <X className="w-5 h-5" />
                   </motion.button>
                 </div>
 
@@ -810,9 +870,9 @@ const RoteiroPage = () => {
                 </motion.button>
               </div>
             </form>
-          </motion.div>
-        </motion.div>
-      </>
+              </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -826,7 +886,11 @@ const RoteiroPage = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              onClick={() => setShowTripModal(false)}
+              onClick={() => {
+                // Restaura scroll ao fechar
+                document.body.style.overflow = '';
+                setShowTripModal(false);
+              }}
             />
             <motion.div
               className="modal-container"
@@ -838,7 +902,11 @@ const RoteiroPage = () => {
               <div className="modal-header">
                 <h2 className="text-2xl font-bold text-dark">Criar Nova Viagem</h2>
                 <motion.button
-                  onClick={() => setShowTripModal(false)}
+                  onClick={() => {
+                    // Restaura scroll ao fechar
+                    document.body.style.overflow = '';
+                    setShowTripModal(false);
+                  }}
                   className="modal-close"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -882,7 +950,11 @@ const RoteiroPage = () => {
                 <div className="flex gap-3 pt-4">
                   <motion.button
                     type="button"
-                    onClick={() => setShowTripModal(false)}
+                    onClick={() => {
+                      // Restaura scroll ao cancelar
+                      document.body.style.overflow = '';
+                      setShowTripModal(false);
+                    }}
                     className="btn-outline flex-1"
                     variants={buttonVariants}
                     initial="rest"

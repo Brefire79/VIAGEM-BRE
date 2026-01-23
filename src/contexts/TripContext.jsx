@@ -8,6 +8,7 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   serverTimestamp,
@@ -34,13 +35,14 @@ export const useTrip = () => {
 export const TripProvider = ({ children }) => {
   const { user } = useAuth();
   const [currentTrip, setCurrentTrip] = useState(null);
+  const [trips, setTrips] = useState([]); // Todas as viagens do usuário
   const [events, setEvents] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [participantsData, setParticipantsData] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Monitora a viagem atual do usuário
+  // Monitora a viagem atual do usuário (apenas viagens ativas)
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -59,10 +61,19 @@ export const TripProvider = ({ children }) => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const tripData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-        setCurrentTrip(tripData);
-        setParticipants(tripData.participants || []);
+      // Salva todas as viagens
+      const allTrips = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTrips(allTrips);
+
+      // Define currentTrip como a primeira viagem ATIVA (não arquivada)
+      const activeTrip = allTrips.find(trip => trip.status !== 'archived');
+      
+      if (activeTrip) {
+        setCurrentTrip(activeTrip);
+        setParticipants(activeTrip.participants || []);
       } else {
         setCurrentTrip(null);
         setParticipants([]);
@@ -134,16 +145,32 @@ export const TripProvider = ({ children }) => {
         try {
           const userDoc = await getDoc(doc(db, 'users', uid));
           if (userDoc.exists()) {
-            data[uid] = userDoc.data();
+            const userData = userDoc.data();
+            data[uid] = userData;
+            console.log(`[DEBUG] Participante carregado:`, uid, userData.displayName);
           } else {
-            // Fallback se usuário não existe no Firestore
+            console.warn(`[DEBUG] Usuário ${uid} não encontrado no Firestore, criando documento...`);
+            // Se não existe, tentar buscar do Auth e criar
+            const displayName = uid.substring(0, 8) + '...';
             data[uid] = {
-              displayName: uid.substring(0, 8) + '...',
+              displayName,
               email: 'Usuário'
             };
+            // Criar documento no Firestore
+            try {
+              await setDoc(doc(db, 'users', uid), {
+                uid,
+                displayName,
+                email: 'usuario@email.com',
+                createdAt: serverTimestamp()
+              });
+              console.log(`[DEBUG] Documento criado para usuário ${uid}`);
+            } catch (createError) {
+              console.error(`[ERROR] Erro ao criar documento para ${uid}:`, createError);
+            }
           }
         } catch (error) {
-
+          console.error(`[ERROR] Erro ao buscar participante ${uid}:`, error);
           data[uid] = {
             displayName: uid.substring(0, 8) + '...',
             email: 'Usuário'
@@ -441,6 +468,8 @@ export const TripProvider = ({ children }) => {
 
   const value = {
     currentTrip,
+    trips, // Todas as viagens (ativas e arquivadas)
+    setCurrentTrip, // Função para mudar a viagem atual
     events,
     expenses,
     participants,

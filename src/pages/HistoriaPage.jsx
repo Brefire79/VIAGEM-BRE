@@ -18,17 +18,40 @@ const HistoriaPage = () => {
   const tripStory = useMemo(() => {
     if (!currentTrip || events.length === 0) return null;
 
+    // Filtra eventos que estão dentro do período da viagem
+    let filteredEvents = events;
+    if (currentTrip.startDate && currentTrip.endDate) {
+      const tripStart = new Date(currentTrip.startDate);
+      const tripEnd = new Date(currentTrip.endDate);
+      tripStart.setHours(0, 0, 0, 0);
+      tripEnd.setHours(23, 59, 59, 999);
+      
+      filteredEvents = events.filter(event => {
+        const eventDate = event.date?.toDate?.() || new Date(event.date);
+        return eventDate >= tripStart && eventDate <= tripEnd;
+      });
+    }
+
+    if (filteredEvents.length === 0) return null;
+
     // Ordena eventos por data
-    const sortedEvents = [...events].sort((a, b) => {
+    const sortedEvents = [...filteredEvents].sort((a, b) => {
       const dateA = a.date?.toDate?.() || new Date(a.date);
       const dateB = b.date?.toDate?.() || new Date(b.date);
       return dateA - dateB;
     });
 
-    const firstEvent = sortedEvents[0];
-    const lastEvent = sortedEvents[sortedEvents.length - 1];
-    const firstDate = firstEvent.date?.toDate?.() || new Date(firstEvent.date);
-    const lastDate = lastEvent.date?.toDate?.() || new Date(lastEvent.date);
+    // Usa as datas definidas na viagem ou pega do primeiro/último evento
+    let firstDate, lastDate;
+    if (currentTrip.startDate && currentTrip.endDate) {
+      firstDate = new Date(currentTrip.startDate);
+      lastDate = new Date(currentTrip.endDate);
+    } else {
+      const firstEvent = sortedEvents[0];
+      const lastEvent = sortedEvents[sortedEvents.length - 1];
+      firstDate = firstEvent.date?.toDate?.() || new Date(firstEvent.date);
+      lastDate = lastEvent.date?.toDate?.() || new Date(lastEvent.date);
+    }
     const tripDuration = differenceInDays(lastDate, firstDate) + 1;
 
     // Agrupa eventos por tipo
@@ -204,7 +227,7 @@ const HistoriaPage = () => {
     story += `*História gerada automaticamente em ${format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}*\n`;
 
     return story;
-  }, [currentTrip, events, expenses, participants, participantsData]);
+  }, [currentTrip, currentTrip?.startDate, currentTrip?.endDate, events, expenses, participants, participantsData]);
 
   const handleCopy = async () => {
     if (tripStory) {

@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useTrip } from '../contexts/TripContext';
-import { Users, Mail, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Users, Mail, Trash2, Edit2, Check, X, Archive, Eye, Calendar } from 'lucide-react';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const GerenciarViagemPage = () => {
   const { user, updateDisplayName } = useAuth();
-  const { currentTrip, participantsData, updateTrip, addParticipant, removeParticipant } = useTrip();
+  const { currentTrip, participantsData, updateTrip, addParticipant, removeParticipant, trips, setCurrentTrip } = useTrip();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(currentTrip?.name || '');
@@ -23,6 +25,11 @@ const GerenciarViagemPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  const [showArchived, setShowArchived] = useState(false);
+  const [showEndTripModal, setShowEndTripModal] = useState(false);
+
+  const isViewingArchived = currentTrip?.status === 'archived';
 
   if (!currentTrip) {
     return (
@@ -153,8 +160,71 @@ const GerenciarViagemPage = () => {
     setLoading(false);
   };
 
+  const handleEndTrip = async () => {
+    if (!window.confirm('Tem certeza que deseja encerrar esta viagem? Ela será arquivada e você poderá criar uma nova viagem.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const tripRef = doc(db, 'trips', currentTrip.id);
+      await updateDoc(tripRef, {
+        status: 'archived',
+        endedAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      setSuccess('Viagem encerrada com sucesso! Crie uma nova viagem para continuar.');
+      setTimeout(() => {
+        setShowEndTripModal(false);
+        setSuccess('');
+        window.location.reload(); // Recarregar para limpar viagem atual
+      }, 2000);
+    } catch (err) {
+      setError('Erro ao encerrar viagem');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Indicador de Viagem Arquivada */}
+      {isViewingArchived && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-purple-600/20 border border-purple-500 rounded-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Archive className="w-5 h-5 text-purple-400" />
+              <div>
+                <p className="text-purple-300 font-semibold">Visualizando viagem arquivada</p>
+                <p className="text-purple-400 text-sm">Esta viagem foi encerrada e está no modo somente leitura</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const activeTrip = trips.find(trip => trip.status !== 'archived');
+                if (activeTrip) {
+                  setCurrentTrip(activeTrip);
+                  setSuccess('Voltou para viagem ativa');
+                  setTimeout(() => setSuccess(''), 3000);
+                } else {
+                  setSuccess('Não há viagem ativa no momento');
+                  setTimeout(() => setSuccess(''), 3000);
+                }
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all"
+            >
+              Voltar para Viagem Ativa
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Mensagens de feedback */}
       {success && (
         <motion.div
@@ -173,6 +243,161 @@ const GerenciarViagemPage = () => {
           className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400"
         >
           {error}
+        </motion.div>
+      )}
+
+      {/* Botão Encerrar Viagem - Apenas para viagens ativas */}
+      {!isViewingArchived && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-orange-600 to-red-600 rounded-xl p-6 shadow-lg mb-8"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                <Archive className="w-6 h-6" />
+                Encerrar Viagem Atual
+              </h2>
+            <p className="text-orange-100 text-sm">
+              Finalize esta viagem e arquive todos os dados. Você poderá visualizá-la no histórico.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowEndTripModal(true)}
+            className="px-6 py-3 bg-white text-orange-600 rounded-lg hover:bg-orange-50 font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
+            disabled={loading}
+          >
+            <Archive className="w-5 h-5" />
+            Salvar e Fechar
+          </button>
+        </div>
+      </motion.div>
+      )}
+
+      {/* Modal de Confirmação de Encerramento */}
+      <AnimatePresence>
+        {showEndTripModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowEndTripModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-gray-800 rounded-xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-white mb-4">Encerrar Viagem?</h3>
+              <p className="text-gray-300 mb-6">
+                Tem certeza que deseja encerrar "<strong>{currentTrip.name}</strong>"?
+                <br /><br />
+                A viagem será arquivada e você poderá:
+                <br />• Visualizá-la no histórico
+                <br />• Ver todos os eventos e despesas
+                <br />• Criar uma nova viagem
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowEndTripModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all"
+                  disabled={loading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEndTrip}
+                  className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all font-semibold"
+                  disabled={loading}
+                >
+                  {loading ? 'Encerrando...' : 'Sim, Encerrar'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Histórico de Viagens Arquivadas */}
+      {trips.filter(trip => trip.status === 'archived').length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-purple-400" />
+              Histórico de Viagens
+            </h2>
+            <span className="text-sm text-gray-400">
+              {trips.filter(trip => trip.status === 'archived').length} {trips.filter(trip => trip.status === 'archived').length === 1 ? 'viagem' : 'viagens'} concluída{trips.filter(trip => trip.status === 'archived').length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {trips
+              .filter(trip => trip.status === 'archived')
+              .sort((a, b) => {
+                const dateA = a.endedAt?.toDate?.() || a.endedAt || new Date(0);
+                const dateB = b.endedAt?.toDate?.() || b.endedAt || new Date(0);
+                return dateB - dateA; // Mais recente primeiro
+              })
+              .map((trip) => {
+                const startDate = trip.createdAt?.toDate?.() || trip.createdAt || new Date();
+                const endDate = trip.endedAt?.toDate?.() || trip.endedAt || new Date();
+                const participantCount = (trip.participants?.length || 0) + (trip.pendingParticipants?.length || 0);
+
+                return (
+                  <motion.div
+                    key={trip.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 hover:border-purple-500/50 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-white mb-2">
+                          {trip.name}
+                        </h3>
+                        <div className="space-y-1 text-sm text-gray-400">
+                          <p className="flex items-center gap-2">
+                            <span className="text-purple-400">📍</span>
+                            {trip.destination || 'Destino não informado'}
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-purple-400" />
+                            {format(startDate, "d 'de' MMMM", { locale: ptBR })}
+                            {' → '}
+                            {format(endDate, "d 'de' MMMM, yyyy", { locale: ptBR })}
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-purple-400" />
+                            {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentTrip(trip);
+                          setSuccess('Visualizando viagem arquivada');
+                          setTimeout(() => setSuccess(''), 3000);
+                        }}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Abrir
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+          </div>
         </motion.div>
       )}
 
@@ -219,16 +444,20 @@ const GerenciarViagemPage = () => {
             </div>
           ) : (
             <div className="flex items-center justify-between px-4 py-2 bg-gray-700 rounded-lg">
-              <span className="text-white">{user?.displayName || user?.email?.split('@')[0] || 'Não definido'}</span>
-              <button
-                onClick={() => {
-                  setIsEditingUserName(true);
-                  setEditedUserName(user?.displayName || '');
-                }}
-                className="p-2 text-purple-400 hover:text-purple-300"
-              >
-                <Edit2 size={18} />
-              </button>
+              <span className="text-white">
+                {participantsData[user?.uid]?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Não definido'}
+              </span>
+              {!isViewingArchived && (
+                <button
+                  onClick={() => {
+                    setIsEditingUserName(true);
+                    setEditedUserName(participantsData[user?.uid]?.displayName || user?.displayName || '');
+                  }}
+                  className="p-2 text-purple-400 hover:text-purple-300"
+                >
+                  <Edit2 size={18} />
+                </button>
+              )}
             </div>
           )}
           <p className="text-xs text-purple-300 mt-2">Este nome aparecerá para todos os participantes</p>
@@ -237,9 +466,9 @@ const GerenciarViagemPage = () => {
         {/* Nome da Viagem */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Nome da Viagem
+            Nome da Viagem {isViewingArchived && <span className="text-purple-400 text-xs">(somente leitura)</span>}
           </label>
-          {isEditingName ? (
+          {isEditingName && !isViewingArchived ? (
             <div className="flex gap-2">
               <input
                 type="text"
@@ -269,12 +498,14 @@ const GerenciarViagemPage = () => {
           ) : (
             <div className="flex items-center justify-between px-4 py-2 bg-gray-700 rounded-lg">
               <span className="text-white">{currentTrip.name}</span>
-              <button
-                onClick={() => setIsEditingName(true)}
-                className="p-2 text-purple-400 hover:text-purple-300"
-              >
-                <Edit2 size={18} />
-              </button>
+              {!isViewingArchived && (
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="p-2 text-purple-400 hover:text-purple-300"
+                >
+                  <Edit2 size={18} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -282,9 +513,9 @@ const GerenciarViagemPage = () => {
         {/* Destino */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Destino
+            Destino {isViewingArchived && <span className="text-purple-400 text-xs">(somente leitura)</span>}
           </label>
-          {isEditingDestination ? (
+          {isEditingDestination && !isViewingArchived ? (
             <div className="flex gap-2">
               <input
                 type="text"
@@ -314,12 +545,14 @@ const GerenciarViagemPage = () => {
           ) : (
             <div className="flex items-center justify-between px-4 py-2 bg-gray-700 rounded-lg">
               <span className="text-white">{currentTrip.destination || 'Não especificado'}</span>
-              <button
-                onClick={() => setIsEditingDestination(true)}
-                className="p-2 text-purple-400 hover:text-purple-300"
-              >
-                <Edit2 size={18} />
-              </button>
+              {!isViewingArchived && (
+                <button
+                  onClick={() => setIsEditingDestination(true)}
+                  className="p-2 text-purple-400 hover:text-purple-300"
+                >
+                  <Edit2 size={18} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -336,18 +569,21 @@ const GerenciarViagemPage = () => {
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="text-purple-400" />
             Participantes ({(currentTrip.participants?.length || 0) + (currentTrip.pendingParticipants?.length || 0)})
+            {isViewingArchived && <span className="text-purple-400 text-xs ml-2">(somente leitura)</span>}
           </h2>
-          <button
-            onClick={() => setShowAddParticipant(!showAddParticipant)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-          >
-            <Mail size={18} />
-            Adicionar por E-mail
-          </button>
+          {!isViewingArchived && (
+            <button
+              onClick={() => setShowAddParticipant(!showAddParticipant)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+            >
+              <Mail size={18} />
+              Adicionar por E-mail
+            </button>
+          )}
         </div>
 
         {/* Formulário para adicionar participante */}
-        {showAddParticipant && (
+        {showAddParticipant && !isViewingArchived && (
           <motion.form
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -429,7 +665,7 @@ const GerenciarViagemPage = () => {
                   </div>
                 </div>
 
-                {!isCreator && (
+                {!isCreator && !isViewingArchived && (
                   <button
                     onClick={() => handleRemoveParticipant(participantId)}
                     disabled={loading}
@@ -483,17 +719,18 @@ const GerenciarViagemPage = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={async () => {
-                      if (window.confirm(`Cancelar convite para ${email}?`)) {
-                        setLoading(true);
-                        try {
-                          const tripRef = doc(db, 'trips', currentTrip.id);
-                          await updateDoc(tripRef, {
-                            pendingParticipants: arrayRemove(email)
-                          });
-                          setSuccess('Convite cancelado!');
-                          setTimeout(() => setSuccess(''), 3000);
+                  {!isViewingArchived && (
+                    <button
+                      onClick={async () => {
+                        if (window.confirm(`Cancelar convite para ${email}?`)) {
+                          setLoading(true);
+                          try {
+                            const tripRef = doc(db, 'trips', currentTrip.id);
+                            await updateDoc(tripRef, {
+                              pendingParticipants: arrayRemove(email)
+                            });
+                            setSuccess('Convite cancelado!');
+                            setTimeout(() => setSuccess(''), 3000);
                         } catch (err) {
                           setError('Erro ao cancelar convite');
                           setTimeout(() => setError(''), 3000);
@@ -508,6 +745,7 @@ const GerenciarViagemPage = () => {
                   >
                     <X size={18} />
                   </button>
+                  )}
                 </motion.div>
               ))}
             </div>
