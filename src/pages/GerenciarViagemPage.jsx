@@ -3,15 +3,20 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useTrip } from '../contexts/TripContext';
 import { Users, Mail, Trash2, Edit2, Check, X } from 'lucide-react';
+import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const GerenciarViagemPage = () => {
-  const { user } = useAuth();
+  const { user, updateDisplayName } = useAuth();
   const { currentTrip, participantsData, updateTrip, addParticipant, removeParticipant } = useTrip();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(currentTrip?.name || '');
   const [isEditingDestination, setIsEditingDestination] = useState(false);
   const [editedDestination, setEditedDestination] = useState(currentTrip?.destination || '');
+  
+  const [isEditingUserName, setIsEditingUserName] = useState(false);
+  const [editedUserName, setEditedUserName] = useState(user?.displayName || '');
   
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [participantEmail, setParticipantEmail] = useState('');
@@ -28,6 +33,16 @@ const GerenciarViagemPage = () => {
       </div>
     );
   }
+
+  // Debug: mostrar dados do criador
+  console.log('[DEBUG] Informações da viagem:', {
+    tripId: currentTrip.id,
+    createdBy: currentTrip.createdBy,
+    creatorData: participantsData[currentTrip.createdBy],
+    currentUserUid: user?.uid,
+    currentUserEmail: user?.email,
+    currentUserDisplayName: user?.displayName
+  });
 
   const handleSaveName = async () => {
     if (!editedName.trim()) return;
@@ -63,6 +78,30 @@ const GerenciarViagemPage = () => {
     }
   };
 
+  const handleSaveUserName = async () => {
+    if (!editedUserName.trim()) return;
+    
+    setLoading(true);
+    try {
+      const result = await updateDisplayName(editedUserName);
+      if (result.success) {
+        setIsEditingUserName(false);
+        setSuccess('Seu nome foi atualizado com sucesso!');
+        setTimeout(() => setSuccess(''), 3000);
+        // Recarregar a página para atualizar o nome em todos os lugares
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        setError(result.error || 'Erro ao atualizar nome');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (err) {
+      setError('Erro ao atualizar nome');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddParticipant = async (e) => {
     e.preventDefault();
     if (!participantEmail.trim()) return;
@@ -70,18 +109,23 @@ const GerenciarViagemPage = () => {
     setLoading(true);
     setError('');
     
-    try {
-      await addParticipant(currentTrip.id, participantEmail);
+    const result = await addParticipant(currentTrip.id, participantEmail);
+    
+    if (result.success) {
       setParticipantEmail('');
       setShowAddParticipant(false);
-      setSuccess('Participante adicionado com sucesso!');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError(err.message || 'Erro ao adicionar participante');
+      if (result.pending) {
+        setSuccess(result.message || 'Convite enviado! A pessoa será adicionada quando criar uma conta.');
+      } else {
+        setSuccess('Participante adicionado com sucesso!');
+      }
+      setTimeout(() => setSuccess(''), 5000);
+    } else {
+      setError(result.error || 'Erro ao adicionar participante');
       setTimeout(() => setError(''), 3000);
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   const handleRemoveParticipant = async (participantId) => {
@@ -96,16 +140,17 @@ const GerenciarViagemPage = () => {
     }
 
     setLoading(true);
-    try {
-      await removeParticipant(currentTrip.id, participantId);
+    const result = await removeParticipant(currentTrip.id, participantId);
+    
+    if (result.success) {
       setSuccess('Participante removido com sucesso!');
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Erro ao remover participante');
+    } else {
+      setError(result.error || 'Erro ao remover participante');
       setTimeout(() => setError(''), 3000);
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   return (
@@ -138,6 +183,56 @@ const GerenciarViagemPage = () => {
         className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8"
       >
         <h2 className="text-2xl font-bold text-white mb-6">Detalhes da Viagem</h2>
+
+        {/* Seu Nome */}
+        <div className="mb-6 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+          <label className="block text-sm font-medium text-purple-300 mb-2">
+            Seu Nome
+          </label>
+          {isEditingUserName ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={editedUserName}
+                onChange={(e) => setEditedUserName(e.target.value)}
+                placeholder="Digite seu nome completo"
+                className="flex-1 px-4 py-2 bg-gray-700 border border-purple-500 rounded-lg text-white focus:outline-none focus:border-purple-400"
+                disabled={loading}
+              />
+              <button
+                onClick={handleSaveUserName}
+                disabled={loading || !editedUserName.trim()}
+                className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check size={20} />
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingUserName(false);
+                  setEditedUserName(user?.displayName || '');
+                }}
+                disabled={loading}
+                className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-700 rounded-lg">
+              <span className="text-white">{user?.displayName || user?.email?.split('@')[0] || 'Não definido'}</span>
+              <button
+                onClick={() => {
+                  setIsEditingUserName(true);
+                  setEditedUserName(user?.displayName || '');
+                }}
+                className="p-2 text-purple-400 hover:text-purple-300"
+              >
+                <Edit2 size={18} />
+              </button>
+            </div>
+          )}
+          <p className="text-xs text-purple-300 mt-2">Este nome aparecerá para todos os participantes</p>
+        </div>
 
         {/* Nome da Viagem */}
         <div className="mb-6">
@@ -240,7 +335,7 @@ const GerenciarViagemPage = () => {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="text-purple-400" />
-            Participantes ({currentTrip.participants?.length || 0})
+            Participantes ({(currentTrip.participants?.length || 0) + (currentTrip.pendingParticipants?.length || 0)})
           </h2>
           <button
             onClick={() => setShowAddParticipant(!showAddParticipant)}
@@ -289,6 +384,19 @@ const GerenciarViagemPage = () => {
           {currentTrip.participants?.map((participantId) => {
             const participant = participantsData[participantId];
             const isCreator = participantId === currentTrip.createdBy;
+            const isCurrentUser = participantId === user?.uid;
+            
+            // Determinar nome de exibição
+            let displayName = 'Carregando...';
+            if (participant?.displayName) {
+              displayName = participant.displayName;
+            } else if (participant?.email) {
+              displayName = participant.email.split('@')[0];
+            } else if (isCurrentUser) {
+              displayName = 'Você';
+            } else {
+              displayName = participantId.substring(0, 8);
+            }
 
             return (
               <motion.div
@@ -299,14 +407,19 @@ const GerenciarViagemPage = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {participant?.displayName?.charAt(0).toUpperCase() || '?'}
+                    {displayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-white font-medium">
-                      {participant?.displayName || participantId.substring(0, 8)}
+                    <p className="text-white font-medium flex items-center gap-2 flex-wrap">
+                      {displayName}
                       {isCreator && (
-                        <span className="ml-2 text-xs px-2 py-1 bg-purple-600 rounded-full">
+                        <span className="text-xs px-2 py-1 bg-purple-600 rounded-full">
                           Criador
+                        </span>
+                      )}
+                      {isCurrentUser && !isCreator && (
+                        <span className="text-xs px-2 py-1 bg-blue-600 rounded-full">
+                          Você
                         </span>
                       )}
                     </p>
@@ -334,6 +447,70 @@ const GerenciarViagemPage = () => {
         {currentTrip.participants?.length === 0 && (
           <div className="text-center py-8 text-gray-400">
             Nenhum participante ainda. Adicione pessoas para começar!
+          </div>
+        )}
+
+        {/* Participantes Pendentes */}
+        {currentTrip.pendingParticipants && currentTrip.pendingParticipants.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-orange-400" />
+              Convites Pendentes ({currentTrip.pendingParticipants.length})
+            </h3>
+            <div className="space-y-3">
+              {currentTrip.pendingParticipants.map((email, index) => (
+                <motion.div
+                  key={email}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="flex items-center justify-between p-4 bg-orange-900/20 border border-orange-500/30 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium flex items-center gap-2">
+                        {email}
+                        <span className="text-xs px-2 py-1 bg-orange-600 rounded-full">
+                          Aguardando
+                        </span>
+                      </p>
+                      <p className="text-orange-300 text-sm">
+                        Será adicionado quando criar uma conta
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      if (window.confirm(`Cancelar convite para ${email}?`)) {
+                        setLoading(true);
+                        try {
+                          const tripRef = doc(db, 'trips', currentTrip.id);
+                          await updateDoc(tripRef, {
+                            pendingParticipants: arrayRemove(email)
+                          });
+                          setSuccess('Convite cancelado!');
+                          setTimeout(() => setSuccess(''), 3000);
+                        } catch (err) {
+                          setError('Erro ao cancelar convite');
+                          setTimeout(() => setError(''), 3000);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }}
+                    disabled={loading}
+                    className="p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Cancelar convite"
+                  >
+                    <X size={18} />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
           </div>
         )}
       </motion.div>

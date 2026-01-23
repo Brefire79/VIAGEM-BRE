@@ -99,12 +99,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Função para atualizar o nome de exibição
+  const updateDisplayName = async (newDisplayName) => {
+    if (!auth || !user) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    try {
+      // Atualiza no Firebase Auth
+      await updateProfile(auth.currentUser, {
+        displayName: newDisplayName
+      });
+
+      // Atualiza no Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        displayName: newDisplayName
+      }, { merge: true });
+
+      console.log('[DEBUG] Nome atualizado para:', newDisplayName);
+      return { success: true };
+    } catch (error) {
+      console.error('[ERROR] Erro ao atualizar nome:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
-    logout
+    logout,
+    updateDisplayName
   };
 
   return (

@@ -6,6 +6,7 @@ import { BookOpen, Sparkles, Download, Copy, Check, Save, FileText, File } from 
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, storyParagraphVariants, buttonVariants, modalOverlayVariants, modalContentVariants } from '../utils/motionVariants';
+import DOMPurify from 'dompurify';
 
 const HistoriaPage = () => {
   const { user } = useAuth();

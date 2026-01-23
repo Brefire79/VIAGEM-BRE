@@ -21,7 +21,8 @@ const FinanceiroPage = () => {
     amount: '',
     paidBy: user?.uid || '',
     splitBetween: [],
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    status: 'pago' // 'pago' ou 'pendente'
   });
 
   // Categorias de despesas
@@ -51,23 +52,28 @@ const FinanceiroPage = () => {
 
   // Cálculos financeiros
   const calculations = useMemo(() => {
-    // Total geral
-    const total = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    // Filtrar despesas: se não tem status, considera como pago (compatibilidade com dados antigos)
+    const paidExpenses = expenses.filter(exp => !exp.status || exp.status === 'pago');
+    const pendingExpenses = expenses.filter(exp => exp.status === 'pendente');
+    
+    // Total geral (despesas pagas)
+    const total = paidExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    const totalPending = pendingExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-    // Total por categoria
-    const byCategory = expenses.reduce((acc, exp) => {
+    // Total por categoria (despesas pagas)
+    const byCategory = paidExpenses.reduce((acc, exp) => {
       acc[exp.category] = (acc[exp.category] || 0) + Number(exp.amount);
       return acc;
     }, {});
 
-    // Total por pessoa (quanto cada um pagou)
-    const paidByPerson = expenses.reduce((acc, exp) => {
+    // Total por pessoa (quanto cada um pagou - despesas pagas)
+    const paidByPerson = paidExpenses.reduce((acc, exp) => {
       acc[exp.paidBy] = (acc[exp.paidBy] || 0) + Number(exp.amount);
       return acc;
     }, {});
 
-    // Quanto cada pessoa deveria pagar (divisão justa)
-    const shouldPayPerPerson = expenses.reduce((acc, exp) => {
+    // Quanto cada pessoa deveria pagar (divisão justa - despesas pagas)
+    const shouldPayPerPerson = paidExpenses.reduce((acc, exp) => {
       const splitCount = exp.splitBetween.length;
       const amountPerPerson = Number(exp.amount) / splitCount;
       
@@ -90,6 +96,7 @@ const FinanceiroPage = () => {
 
     return {
       total,
+      totalPending,
       byCategory,
       paidByPerson,
       shouldPayPerPerson,
@@ -116,7 +123,7 @@ const FinanceiroPage = () => {
       return;
     }
 
-    // Cria data sem conversão de timezone
+    // Cria data em UTC para evitar problemas de timezone
     const [year, month, day] = formData.date.split('-').map(Number);
     
     // Validação de valores numéricos
@@ -125,10 +132,25 @@ const FinanceiroPage = () => {
       return;
     }
     
+    // Criar Date em UTC (meio-dia) para evitar problemas de fuso horário
+    const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0));
+    
+    console.log('[DEBUG] Salvando despesa:', {
+      descricao: formData.description,
+      valor: Number(formData.amount),
+      ano: year,
+      mes: month,
+      dia: day,
+      dateUTC: utcDate.toISOString(),
+      status: formData.status,
+      pagoPor: formData.paidBy
+    });
+    
     const expenseData = {
       ...formData,
       amount: Number(formData.amount),
-      date: new Date(year, month - 1, day, 12, 0) // 12h meio-dia para evitar problemas de timezone
+      date: utcDate,
+      status: formData.status || 'pago'
     };
 
     let result;
@@ -147,7 +169,21 @@ const FinanceiroPage = () => {
 
   const handleOpenModal = (expense = null) => {
     if (expense) {
-      const expenseDate = expense.date?.toDate?.() || new Date(expense.date);
+      // Converte data usando UTC
+      let expenseDate;
+      if (expense.date?.toDate) {
+        expenseDate = expense.date.toDate();
+      } else if (expense.date instanceof Date) {
+        expenseDate = expense.date;
+      } else {
+        expenseDate = new Date(expense.date);
+      }
+      
+      // Extrair componentes em UTC
+      const year = expenseDate.getUTCFullYear();
+      const month = expenseDate.getUTCMonth() + 1;
+      const day = expenseDate.getUTCDate();
+      
       setEditingExpense(expense);
       setFormData({
         category: expense.category,
@@ -155,7 +191,8 @@ const FinanceiroPage = () => {
         amount: expense.amount.toString(),
         paidBy: expense.paidBy,
         splitBetween: expense.splitBetween,
-        date: format(expenseDate, 'yyyy-MM-dd')
+        date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        status: expense.status || 'pago'
       });
     } else {
       setEditingExpense(null);
@@ -165,7 +202,8 @@ const FinanceiroPage = () => {
         amount: '',
         paidBy: user?.uid || '',
         splitBetween: participants,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        status: 'pago'
       });
     }
     setShowModal(true);
@@ -280,14 +318,34 @@ const FinanceiroPage = () => {
 
         <div className="flex justify-center gap-6 md:gap-8 text-center pt-4 border-t border-white border-opacity-30">
           <div>
-            <p className="text-xs opacity-80 mb-1">Despesas</p>
-            <p className="text-xl md:text-2xl font-bold">{expenses.length}</p>
+            <p className="text-xs opacity-80 mb-1">Despesas Pagas</p>
+            <p className="text-xl md:text-2xl font-bold">{expenses.filter(e => !e.status || e.status === 'pago').length}</p>
           </div>
+          {calculations.totalPending > 0 && (
+            <div>
+              <p className="text-xs opacity-80 mb-1">Pendentes</p>
+              <p className="text-xl md:text-2xl font-bold text-orange-200">{expenses.filter(e => e.status === 'pendente').length}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs opacity-80 mb-1">Participantes</p>
             <p className="text-xl md:text-2xl font-bold">{participants.length}</p>
           </div>
         </div>
+        
+        {/* Aviso de despesas pendentes */}
+        {calculations.totalPending > 0 && (
+          <motion.div
+            className="mt-4 bg-orange-500 bg-opacity-90 backdrop-blur-sm rounded-lg p-3 text-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <p className="text-sm font-semibold">
+              ⚠️ {formatCurrency(calculations.totalPending)} em despesas pendentes
+            </p>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* 2️⃣ BLOCO "SUA SITUAÇÃO" */}
@@ -473,20 +531,49 @@ const FinanceiroPage = () => {
           {expenses.map((expense, index) => {
             const CategoryIcon = categories[expense.category].icon;
             const categoryColor = categories[expense.category].color;
-            const expenseDate = expense.date?.toDate?.() || new Date(expense.date);
+            let expenseDate;
+            if (expense.date?.toDate) {
+              expenseDate = expense.date.toDate();
+            } else if (expense.date instanceof Date) {
+              expenseDate = expense.date;
+            } else {
+              expenseDate = new Date(expense.date);
+            }
+            
+            // Extrair data em UTC para exibição correta
+            const day = expenseDate.getUTCDate();
+            const month = expenseDate.getUTCMonth();
+            const year = expenseDate.getUTCFullYear();
+            const displayDate = new Date(year, month, day);
+            
+            // Considera despesas sem status como pagas (compatibilidade)
+            const isPendente = expense.status === 'pendente';
+            const isPago = expense.status === 'pago';
 
             return (
               <motion.div 
                 key={expense.id} 
-                className="p-4 bg-sand-50 hover:bg-sand-100 rounded-xl transition-all"
+                className={`p-4 rounded-xl transition-all relative ${
+                  isPendente
+                    ? 'bg-orange-50 hover:bg-orange-100 border-2 border-orange-200'
+                    : 'bg-sand-50 hover:bg-sand-100'
+                }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1 + (index * 0.05) }}
                 whileHover={{ x: 4 }}
               >
+                {/* Badge de status pendente */}
+                {isPendente && (
+                  <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                    <span>⏳</span>
+                    PENDENTE
+                  </div>
+                )}
+                
                 <div className="flex gap-4">
                   {/* Ícone */}
-                  <div className={`${categoryColor} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <div className={`${categoryColor} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isPendente && 'opacity-60'}`}>
                     <CategoryIcon className="w-6 h-6 text-white" />
                   </div>
 
@@ -494,13 +581,18 @@ const FinanceiroPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className={`badge ${categoryColor} bg-opacity-20 text-xs`}>
                             {categories[expense.category].label}
                           </span>
                           <span className="text-xs text-sand-500">
-                            {format(expenseDate, "d 'de' MMM", { locale: ptBR })}
+                            {format(displayDate, "d 'de' MMM", { locale: ptBR })}
                           </span>
+                          {isPago && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                              ✓ Pago
+                            </span>
+                          )}
                         </div>
                         <h3 className="text-lg font-bold text-dark">
                           {expense.description}
@@ -653,6 +745,47 @@ const FinanceiroPage = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Status do pagamento */}
+              <div>
+                <label className="block text-sm font-medium text-dark-100 mb-2">
+                  Situação *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer border-2 transition-all ${
+                    formData.status === 'pago' 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
+                      : 'border-sand-200 bg-sand-50 text-sand-600 hover:border-sand-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="status"
+                      value="pago"
+                      checked={formData.status === 'pago'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="sr-only"
+                    />
+                    <span className="text-xl">✅</span>
+                    <span className="font-semibold">Pago</span>
+                  </label>
+                  <label className={`flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer border-2 transition-all ${
+                    formData.status === 'pendente' 
+                      ? 'border-orange-500 bg-orange-50 text-orange-700' 
+                      : 'border-sand-200 bg-sand-50 text-sand-600 hover:border-sand-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="status"
+                      value="pendente"
+                      checked={formData.status === 'pendente'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="sr-only"
+                    />
+                    <span className="text-xl">⏳</span>
+                    <span className="font-semibold">Pendente</span>
+                  </label>
+                </div>
               </div>
 
               {/* Dividir entre */}
