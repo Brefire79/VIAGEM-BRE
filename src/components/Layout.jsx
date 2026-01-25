@@ -139,12 +139,21 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container-mobile py-4 md:py-6 pb-20 md:pb-6">
+      <main className="flex-1 container-mobile py-4 md:py-6 pb-6 md:pb-6">
         {children}
       </main>
+      
+      {/* Footer com versão */}
+      <footer className="bg-sand-100 border-t border-sand-300 py-2 px-4 text-center text-xs text-sand-600 md:hidden">
+        <span>v1.0.0</span>
+      </footer>
 
-      {/* Bottom Navigation (Mobile) - Safe area support */}
-      <nav className="md:hidden bg-white border-t border-sand-300 fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+      {/* Bottom Navigation (Mobile) - Hidden by default, show on hover/touch */}
+      <nav 
+        className="md:hidden bg-white border-t border-sand-300 fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom transition-all duration-300 translate-y-full hover:translate-y-0"
+        onTouchStart={(e) => e.currentTarget.classList.remove('translate-y-full')}
+        onTouchEnd={(e) => setTimeout(() => e.currentTarget.classList.add('translate-y-full'), 3000)}
+      >
         <div className="flex items-center justify-around py-2 pb-safe">
           {navItems.map(({ path, icon: Icon, label }) => (
             <Link

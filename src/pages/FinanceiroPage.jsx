@@ -425,78 +425,6 @@ const FinanceiroPage = () => {
         </div>
       </motion.div>
 
-      {/* 3️⃣ RESUMO POR PESSOA */}
-      <motion.div 
-        className="card mb-6"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <h2 className="text-2xl font-bold text-dark mb-6 flex items-center gap-3">
-          <Users className="w-7 h-7 text-ocean" />
-          Resumo por Pessoa
-        </h2>
-        <div className="space-y-4">
-          {Object.entries(calculations.balance)
-            .sort((a, b) => b[1] - a[1]) // Ordena: quem recebe primeiro
-            .map(([personId, balance], index) => {
-            const paid = calculations.paidByPerson[personId] || 0;
-            const shouldPay = calculations.shouldPayPerPerson[personId] || 0;
-            const isPositive = balance > 0;
-            const isZero = Math.abs(balance) < 0.01;
-            const isCurrentUser = personId === user?.uid;
-
-            return (
-              <motion.div 
-                key={personId} 
-                className={`p-6 rounded-2xl border-2 ${
-                  isCurrentUser 
-                    ? 'bg-ocean-50 border-ocean-300' 
-                    : 'bg-sand-50 border-sand-200'
-                }`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + (index * 0.05) }}
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* Nome */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg md:text-xl font-bold text-dark mb-1 flex flex-wrap items-center gap-2">
-                      <span className="truncate">{getParticipantName(personId)}</span>
-                      {isCurrentUser && (
-                        <span className="text-xs bg-ocean text-white px-2 py-1 rounded-full whitespace-nowrap">
-                          Você
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-xs md:text-sm text-sand-500">
-                      Pagou {formatCurrency(paid)} • Deveria pagar {formatCurrency(shouldPay)}
-                    </p>
-                  </div>
-
-                  {/* Saldo */}
-                  <div className="text-right md:text-center shrink-0">
-                    <p className="text-xs text-sand-500 mb-1">Saldo</p>
-                    <p className={`text-2xl md:text-3xl font-black ${
-                      isZero 
-                        ? 'text-green-600' 
-                        : isPositive 
-                        ? 'text-green-600' 
-                        : 'text-orange-600'
-                    }`}>
-                      {isZero ? '✓ R$ 0' : isPositive ? `+ ${formatCurrency(balance)}` : `- ${formatCurrency(Math.abs(balance))}`}
-                    </p>
-                    <p className="text-xs text-sand-600 mt-1">
-                      {isZero ? 'Quitado' : isPositive ? 'Tem a receber' : 'Deve pagar'}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-
       {/* Botão adicionar despesa */}
       <motion.button
         onClick={() => handleOpenModal()}
@@ -783,38 +711,28 @@ const FinanceiroPage = () => {
                   Situação *
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className={`flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer border-2 transition-all ${
-                    formData.status === 'pago' 
-                      ? 'border-green-500 bg-green-50 text-green-700' 
-                      : 'border-sand-200 bg-sand-50 text-sand-600 hover:border-sand-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="status"
-                      value="pago"
-                      checked={formData.status === 'pago'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="sr-only"
-                    />
-                    <span className="text-xl">✅</span>
-                    <span className="font-semibold">Pago</span>
-                  </label>
-                  <label className={`flex items-center justify-center gap-2 p-4 rounded-xl cursor-pointer border-2 transition-all ${
-                    formData.status === 'pendente' 
-                      ? 'border-orange-500 bg-orange-50 text-orange-700' 
-                      : 'border-sand-200 bg-sand-50 text-sand-600 hover:border-sand-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="status"
-                      value="pendente"
-                      checked={formData.status === 'pendente'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="sr-only"
-                    />
-                    <span className="text-xl">⏳</span>
-                    <span className="font-semibold">Pendente</span>
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'pago' })}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-semibold ${
+                      formData.status === 'pago' 
+                        ? 'border-green-500 bg-green-50 text-green-700' 
+                        : 'border-sand-200 bg-sand-50 text-sand-600'
+                    }`}
+                  >
+                    <span>✅</span> Pago
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'pendente' })}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-semibold ${
+                      formData.status === 'pendente' 
+                        ? 'border-orange-500 bg-orange-50 text-orange-700' 
+                        : 'border-sand-200 bg-sand-50 text-sand-600'
+                    }`}
+                  >
+                    <span>⏳</span> Pendente
+                  </button>
                 </div>
               </div>
 
