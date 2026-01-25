@@ -553,39 +553,92 @@ const RoteiroPage = () => {
       {/* Card de Datas da Viagem */}
       {currentTrip.startDate && currentTrip.endDate && (
         <motion.div
-          className="card-interactive mb-8"
+          className="mb-8 space-y-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-ocean-100 to-aqua-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <CalendarRange className="w-6 h-6 text-ocean" />
-              </div>
+          {/* Título do Período */}
+          <div className="flex items-center gap-3 mb-2">
+            <motion.div 
+              className="w-8 h-8 bg-gradient-to-br from-ocean to-aqua rounded-lg flex items-center justify-center"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <CalendarRange className="w-5 h-5 text-white" />
+            </motion.div>
+            <h2 className="text-xl font-bold text-dark">Período da Viagem</h2>
+          </div>
+
+          {/* Card com datas */}
+          <motion.div
+            className="card-interactive"
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              {/* Datas */}
               <div className="flex-1">
-                <h3 className="font-semibold text-dark mb-2">Período da Viagem</h3>
-                <div className="flex items-center gap-2 text-sand-600">
-                  <span className="text-sm font-medium">
-                    {format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}
-                  </span>
-                  <span className="text-xs text-sand-400">•</span>
-                  <span className="text-sm font-medium">
-                    {format(new Date(currentTrip.endDate), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  </span>
+                <div className="grid grid-cols-2 gap-6 sm:flex sm:gap-8">
+                  {/* Data Início */}
+                  <div>
+                    <p className="text-xs uppercase font-semibold text-sand-500 mb-2">Início</p>
+                    <p className="text-lg font-bold text-dark">
+                      {format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-sand-400">
+                      {format(new Date(currentTrip.startDate), "EEEE", { locale: ptBR })}
+                    </p>
+                  </div>
+
+                  {/* Separador */}
+                  <div className="flex items-end pb-1">
+                    <span className="text-sand-300 text-lg">→</span>
+                  </div>
+
+                  {/* Data Fim */}
+                  <div>
+                    <p className="text-xs uppercase font-semibold text-sand-500 mb-2">Término</p>
+                    <p className="text-lg font-bold text-dark">
+                      {format(new Date(currentTrip.endDate), "d 'de' MMMM", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-sand-400">
+                      {format(new Date(currentTrip.endDate), "EEEE", { locale: ptBR })}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Botão editar */}
+              <motion.button
+                onClick={handleOpenEditDatesModal}
+                className="p-3 hover:bg-ocean-50 rounded-xl transition-all flex-shrink-0 self-start sm:self-center"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="Alterar datas"
+              >
+                <Edit2 className="w-5 h-5 text-ocean" />
+              </motion.button>
             </div>
-            <motion.button
-              onClick={handleOpenEditDatesModal}
-              className="p-2.5 hover:bg-ocean-50 rounded-xl transition-all flex-shrink-0"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              title="Alterar datas"
-            >
-              <Edit2 className="w-5 h-5 text-ocean" />
-            </motion.button>
-          </div>
+          </motion.div>
+
+          {/* Aviso sobre História */}
+          <motion.div
+            className="bg-gradient-to-r from-ocean-50 to-aqua-50 border border-ocean-200 rounded-xl p-4 flex gap-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex-shrink-0 mt-1">
+              <AlertCircle className="w-5 h-5 text-ocean" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-dark mb-1">ℹ️ Período da História</p>
+              <p className="text-xs text-dark-50 leading-relaxed">
+                A história da viagem será gerada com base neste período. Todos os participantes verão a narrativa começando em <strong>{format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}</strong> e finalizando em <strong>{format(new Date(currentTrip.endDate), "d 'de' MMMM", { locale: ptBR })}</strong>.
+              </p>
+            </div>
+          </motion.div>
         </motion.div>
       )}
 
