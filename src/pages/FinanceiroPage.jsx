@@ -42,9 +42,42 @@ const FinanceiroPage = () => {
   // Função para ordenar despesas por data (crescente - mais antiga primeiro)
   const sortExpensesByDate = (expensesToSort) => {
     return [...expensesToSort].sort((a, b) => {
-      const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-      const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-      return dateA - dateB;
+      // Converter Firestore Timestamp ou Date para Date JavaScript
+      let dateA, dateB;
+      
+      if (a.date?.toDate) {
+        dateA = a.date.toDate();
+      } else if (a.date instanceof Date) {
+        dateA = a.date;
+      } else {
+        dateA = new Date(a.date);
+      }
+      
+      if (b.date?.toDate) {
+        dateB = b.date.toDate();
+      } else if (b.date instanceof Date) {
+        dateB = b.date;
+      } else {
+        dateB = new Date(b.date);
+      }
+      
+      // Converter para UTC para comparação consistente
+      const timeA = dateA.getTime();
+      const timeB = dateB.getTime();
+      
+      console.log('[DEBUG] Comparando datas no sort:', {
+        expenseADate: a.description,
+        dateAOriginal: a.date,
+        dateAConverted: dateA.toISOString(),
+        timeA,
+        expenseBDate: b.description,
+        dateBOriginal: b.date,
+        dateBConverted: dateB.toISOString(),
+        timeB,
+        result: timeA - timeB
+      });
+      
+      return timeA - timeB;
     });
   };
 

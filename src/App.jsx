@@ -10,9 +10,6 @@ const RoteiroPage = lazy(() => import('./pages/RoteiroPage'));
 const FinanceiroPage = lazy(() => import('./pages/FinanceiroPage'));
 const HistoriaPage = lazy(() => import('./pages/HistoriaPage'));
 const GerenciarViagemPage = lazy(() => import('./pages/GerenciarViagemPage'));
-const TimelineViagemPage = lazy(() => import('./pages/TimelineViagemPage'));
-const RetrospectivePage = lazy(() => import('./pages/RetrospectivePage'));
-const AtividadesColaborativasPage = lazy(() => import('./pages/AtividadesColaborativasPage'));
 
 const PageFallback = () => (
   <div className="flex h-screen items-center justify-center text-slate-600">
@@ -76,9 +73,6 @@ function AppRoutes() {
             <Route path="/financeiro" element={<FinanceiroPage />} />
             <Route path="/historia" element={<HistoriaPage />} />
             <Route path="/gerenciar" element={<GerenciarViagemPage />} />
-            <Route path="/timeline" element={<TimelineViagemPage />} />
-            <Route path="/atividades" element={<AtividadesColaborativasPage />} />
-            <Route path="/retrospectiva" element={<RetrospectivePage />} />
           </Route>
 
           {/* Rota 404 */}
