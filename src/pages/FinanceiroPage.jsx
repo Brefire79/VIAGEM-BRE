@@ -39,6 +39,15 @@ const FinanceiroPage = () => {
     return participantsData[uid]?.displayName || 'Carregando...';
   };
 
+  // Função para ordenar despesas por data (crescente - mais antiga primeiro)
+  const sortExpensesByDate = (expensesToSort) => {
+    return [...expensesToSort].sort((a, b) => {
+      const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+      const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+      return dateA - dateB;
+    });
+  };
+
   // Cálculos financeiros
   const calculations = useMemo(() => {
     // Filtrar despesas: se não tem status, considera como pago (compatibilidade com dados antigos)
@@ -463,13 +472,7 @@ const FinanceiroPage = () => {
             Todas as Despesas ({expenses.length})
           </h2>
           <div className="space-y-3">
-          {expenses
-            .sort((a, b) => {
-              // Converter datas para comparação
-              const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-              const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
-              return dateA - dateB; // Ordem crescente (mais antiga primeiro)
-            })
+          {sortExpensesByDate(expenses)
             .map((expense, index) => {
             const CategoryIcon = categories[expense.category].icon;
             const categoryColor = categories[expense.category].color;
