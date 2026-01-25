@@ -363,7 +363,7 @@ const RoteiroPage = () => {
                     </motion.button>
                   </div>
 
-                <form onSubmit={handleCreateTrip} className="space-y-5 p-6">
+                <form onSubmit={handleCreateTrip} className="space-y-4 p-4 md:p-6 overflow-y-auto">
                   {/* Nome da Viagem */}
                   <div>
                     <label className="block text-sm font-medium text-dark-100 mb-2">
@@ -741,7 +741,7 @@ const RoteiroPage = () => {
                 </div>
 
             {/* Formulário */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 overflow-y-auto">
               {/* Tipo */}
               <div>
                 <label className="block text-sm font-medium text-dark-100 mb-2">

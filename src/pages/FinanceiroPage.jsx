@@ -20,7 +20,6 @@ const FinanceiroPage = () => {
     description: '',
     amount: '',
     paidBy: user?.uid || '',
-    splitBetween: [], // Não mais preenchido automaticamente
     date: new Date().toISOString().split('T')[0],
     status: 'pago' // 'pago' ou 'pendente'
   });
@@ -38,16 +37,6 @@ const FinanceiroPage = () => {
   // Função auxiliar para pegar nome do participante
   const getParticipantName = (uid) => {
     return participantsData[uid]?.displayName || 'Carregando...';
-  };
-
-  // Função para alternar seleção de participante
-  const toggleParticipant = (participantId) => {
-    setFormData(prev => ({
-      ...prev,
-      splitBetween: prev.splitBetween.includes(participantId)
-        ? prev.splitBetween.filter(id => id !== participantId)
-        : [...prev.splitBetween, participantId]
-    }));
   };
 
   // Cálculos financeiros
@@ -74,10 +63,15 @@ const FinanceiroPage = () => {
 
     // Quanto cada pessoa deveria pagar (divisão justa - despesas pagas)
     const shouldPayPerPerson = paidExpenses.reduce((acc, exp) => {
-      const splitCount = exp.splitBetween.length;
+      const splitBetween = Array.isArray(exp.splitBetween) && exp.splitBetween.length > 0
+        ? exp.splitBetween
+        : [exp.paidBy];
+
+      const splitCount = splitBetween.length;
+      if (!splitCount) return acc;
+
       const amountPerPerson = Number(exp.amount) / splitCount;
-      
-      exp.splitBetween.forEach(personId => {
+      splitBetween.forEach(personId => {
         acc[personId] = (acc[personId] || 0) + amountPerPerson;
       });
       
@@ -116,11 +110,6 @@ const FinanceiroPage = () => {
     e.preventDefault();
     
     // Validação
-    if (formData.splitBetween.length === 0) {
-      alert('Selecione pelo menos uma pessoa para dividir a despesa');
-      return;
-    }
-    
     if (!formData.date) {
       alert('Por favor, selecione uma data para a despesa');
       return;
@@ -133,11 +122,6 @@ const FinanceiroPage = () => {
 
     if (!formData.paidBy) {
       alert('Por favor, selecione quem pagou');
-      return;
-    }
-
-    if (formData.splitBetween.length === 0) {
-      alert('Por favor, selecione pelo menos uma pessoa para dividir a despesa');
       return;
     }
 
@@ -168,7 +152,9 @@ const FinanceiroPage = () => {
       ...formData,
       amount: Number(formData.amount),
       date: utcDate,
-      status: formData.status || 'pago'
+      status: formData.status || 'pago',
+      // Valor atrelado apenas à pessoa que pagou
+      splitBetween: [formData.paidBy]
     };
 
     let result;
@@ -208,7 +194,6 @@ const FinanceiroPage = () => {
         description: expense.description,
         amount: expense.amount.toString(),
         paidBy: expense.paidBy,
-        splitBetween: expense.splitBetween,
         date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         status: expense.status || 'pago'
       });
@@ -219,7 +204,6 @@ const FinanceiroPage = () => {
         description: '',
         amount: '',
         paidBy: user?.uid || '',
-        splitBetween: [], // Começa vazio, usuário escolhe
         date: new Date().toISOString().split('T')[0],
         status: 'pago'
       });
@@ -546,7 +530,14 @@ const FinanceiroPage = () => {
             Todas as Despesas ({expenses.length})
           </h2>
           <div className="space-y-3">
-          {expenses.map((expense, index) => {
+          {expenses
+            .sort((a, b) => {
+              // Converter datas para comparação
+              const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+              const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+              return dateA - dateB; // Ordem crescente (mais antiga primeiro)
+            })
+            .map((expense, index) => {
             const CategoryIcon = categories[expense.category].icon;
             const categoryColor = categories[expense.category].color;
             let expenseDate;
@@ -641,8 +632,6 @@ const FinanceiroPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-sand-500">
                         <span>Pago por: {getParticipantName(expense.paidBy)}</span>
-                        <span className="mx-2">•</span>
-                        <span>Dividido entre {expense.splitBetween.length}</span>
                       </div>
                       <p className="text-xl font-bold text-ocean">
                         {formatCurrency(expense.amount)}
@@ -686,7 +675,7 @@ const FinanceiroPage = () => {
             </div>
 
             {/* Formulário */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 overflow-y-auto">
               {/* Categoria */}
               <div>
                 <label className="block text-sm font-medium text-dark-100 mb-2">
@@ -815,36 +804,6 @@ const FinanceiroPage = () => {
                     <span className="font-semibold">Pendente</span>
                   </label>
                 </div>
-              </div>
-
-              {/* Dividir entre */}
-              <div>
-                <label className="block text-sm font-medium text-dark-100 mb-2">
-                  Dividir entre *
-                </label>
-                <div className="space-y-2">
-                  {participants.map(participantId => (
-                    <label
-                      key={participantId}
-                      className="flex items-center gap-3 p-3 bg-sand-100 rounded-xl cursor-pointer hover:bg-sand-200 transition-all"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.splitBetween.includes(participantId)}
-                        onChange={() => toggleParticipant(participantId)}
-                        className="w-5 h-5 text-ocean rounded focus:ring-ocean"
-                      />
-                      <span className="font-medium text-dark">
-                        {getParticipantName(participantId)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {formData.splitBetween.length > 0 && formData.amount && (
-                  <p className="text-sm text-sand-500 mt-2">
-                    Cada pessoa pagará: {formatCurrency(Number(formData.amount) / formData.splitBetween.length)}
-                  </p>
-                )}
               </div>
 
               {/* Botões */}

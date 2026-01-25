@@ -12,7 +12,6 @@ import {
   query,
   where,
   serverTimestamp,
-  orderBy,
   arrayUnion,
   arrayRemove
 } from 'firebase/firestore';
@@ -466,6 +465,57 @@ export const TripProvider = ({ children }) => {
     }
   };
 
+  // ========== EXCLUIR VIAGEM ==========
+
+  const deleteTrip = async (tripId) => {
+    if (!user || !db) return { success: false, error: 'Usuário não autenticado' };
+
+    try {
+      // Verificar se é o criador
+      const tripRef = doc(db, 'trips', tripId);
+      const tripDoc = await getDoc(tripRef);
+      
+      if (!tripDoc.exists()) {
+        throw new Error('Viagem não encontrada');
+      }
+
+      const tripData = tripDoc.data();
+      
+      if (tripData.createdBy !== user.uid) {
+        throw new Error('Apenas o criador pode excluir a viagem');
+      }
+
+      // Excluir todos os eventos relacionados
+      const eventsRef = collection(db, 'events');
+      const eventsQuery = query(eventsRef, where('tripId', '==', tripId));
+      const eventsSnapshot = await getDocs(eventsQuery);
+      
+      const deleteEventPromises = eventsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteEventPromises);
+
+      // Excluir todas as despesas relacionadas
+      const expensesRef = collection(db, 'expenses');
+      const expensesQuery = query(expensesRef, where('tripId', '==', tripId));
+      const expensesSnapshot = await getDocs(expensesQuery);
+      
+      const deleteExpensePromises = expensesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteExpensePromises);
+
+      // Excluir a viagem
+      await deleteDoc(tripRef);
+      
+      // Resetar currentTrip se era a viagem atual
+      if (currentTrip?.id === tripId) {
+        setCurrentTrip(null);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[ERROR] Erro ao excluir viagem:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     currentTrip,
     trips, // Todas as viagens (ativas e arquivadas)
@@ -477,6 +527,7 @@ export const TripProvider = ({ children }) => {
     loading,
     createTrip,
     updateTrip,
+    deleteTrip,
     addParticipant,
     removeParticipant,
     addEvent,

@@ -10,7 +10,7 @@ import { ptBR } from 'date-fns/locale';
 
 const GerenciarViagemPage = () => {
   const { user, updateDisplayName } = useAuth();
-  const { currentTrip, participantsData, updateTrip, addParticipant, removeParticipant, trips, setCurrentTrip } = useTrip();
+  const { currentTrip, participantsData, updateTrip, addParticipant, removeParticipant, deleteTrip, trips, setCurrentTrip } = useTrip();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(currentTrip?.name || '');
@@ -28,6 +28,7 @@ const GerenciarViagemPage = () => {
   
   const [showArchived, setShowArchived] = useState(false);
   const [showEndTripModal, setShowEndTripModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const isViewingArchived = currentTrip?.status === 'archived';
 
@@ -129,6 +130,24 @@ const GerenciarViagemPage = () => {
       setTimeout(() => setSuccess(''), 5000);
     } else {
       setError(result.error || 'Erro ao adicionar participante');
+      setTimeout(() => setError(''), 3000);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleDeleteTrip = async () => {
+    setLoading(true);
+    setError('');
+    
+    const result = await deleteTrip(currentTrip.id);
+    
+    if (result.success) {
+      setSuccess('Viagem excluída com sucesso!');
+      setShowDeleteModal(false);
+      setTimeout(() => setSuccess(''), 3000);
+    } else {
+      setError(result.error || 'Erro ao excluir viagem');
       setTimeout(() => setError(''), 3000);
     }
     
@@ -558,6 +577,38 @@ const GerenciarViagemPage = () => {
         </div>
       </motion.div>
 
+      {/* Botão de Excluir Viagem (apenas para criador) */}
+      {currentTrip.createdBy === user?.uid && !isViewingArchived && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-red-900/20 border border-red-500/30 rounded-xl p-6 shadow-lg mb-8"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-red-400 mb-2 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Zona de Perigo
+              </h3>
+              <p className="text-gray-300 text-sm mb-1">
+                Excluir permanentemente esta viagem e todos os dados relacionados.
+              </p>
+              <p className="text-red-400 text-xs">
+                ⚠️ Esta ação não pode ser desfeita!
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 shrink-0"
+            >
+              <Trash2 size={18} />
+              Excluir Viagem
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Participantes */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -752,6 +803,60 @@ const GerenciarViagemPage = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-xl"
+          >
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Excluir Viagem?
+              </h3>
+              <p className="text-gray-300 mb-4">
+                Tem certeza que deseja excluir permanentemente a viagem <strong>"{currentTrip.name}"</strong>?
+              </p>
+              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 mb-4">
+                <p className="text-red-400 text-sm font-semibold mb-2">
+                  ⚠️ Esta ação irá excluir:
+                </p>
+                <ul className="text-red-300 text-sm text-left space-y-1">
+                  <li>• Todos os eventos do roteiro</li>
+                  <li>• Todas as despesas financeiras</li>
+                  <li>• Todos os registros da história</li>
+                  <li>• Dados de todos os participantes</li>
+                </ul>
+              </div>
+              <p className="text-red-400 font-bold text-sm">
+                Esta ação não pode ser desfeita!
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteTrip}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold"
+              >
+                {loading ? 'Excluindo...' : 'Sim, Excluir'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

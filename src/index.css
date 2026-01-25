@@ -109,17 +109,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: 0.75rem;
+    /* Suporte para mobile com viewport dinâmico */
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    position: fixed;
+    top: 0;
+    left: 0;
   }
 
   /* Modal container */
   .modal-container {
     @apply relative bg-white rounded-2xl shadow-2xl;
     /* Dimensões responsivas */
-    width: 92%;
+    width: 100%;
     max-width: 600px;
-    max-height: 90vh;
-    max-height: 90dvh; /* Dynamic viewport height para mobile */
+    max-height: 85vh;
+    max-height: 85dvh; /* Dynamic viewport height para mobile */
     /* Scroll interno */
     overflow-y: auto;
     overflow-x: hidden;
@@ -127,6 +134,8 @@
     -webkit-overflow-scrolling: touch;
     /* Z-index maior que overlay */
     z-index: 50;
+    /* Previne problemas de posicionamento */
+    flex-shrink: 0;
   }
 
   /* Ajustes para tablets */
@@ -148,12 +157,48 @@
 
   /* Modal header */
   .modal-header {
-    @apply flex items-center justify-between p-6 border-b border-sand-200;
+    @apply flex items-center justify-between p-4 md:p-6 border-b border-sand-200;
+    flex-shrink: 0;
   }
 
   /* Modal close button */
   .modal-close {
     @apply p-2 hover:bg-sand-100 rounded-lg transition-colors text-dark-100;
+    flex-shrink: 0;
+  }
+
+  /* Melhorias para formulários em modais */
+  .modal-container form {
+    @apply flex flex-col;
+    gap: 1rem;
+  }
+
+  .modal-container .input {
+    font-size: 16px; /* Previne zoom em iOS */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Media query para melhor dimensionamento no mobile */
+  @media (max-width: 480px) {
+    .modal-overlay {
+      padding: 0.5rem;
+    }
+
+    .modal-container {
+      width: 100%;
+      max-width: calc(100vw - 1rem);
+      max-height: calc(100dvh - 4rem);
+      border-radius: 1rem;
+    }
+
+    .modal-header {
+      padding: 1rem;
+    }
+
+    .modal-header h2 {
+      @apply text-xl;
+    }
   }
 
   /* Floating Action Button */
