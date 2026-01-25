@@ -26,6 +26,9 @@ const GerenciarViagemPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
+  const [editingParticipantId, setEditingParticipantId] = useState(null);
+  const [editingParticipantName, setEditingParticipantName] = useState('');
+  
   const [showArchived, setShowArchived] = useState(false);
   const [showEndTripModal, setShowEndTripModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -152,6 +155,46 @@ const GerenciarViagemPage = () => {
     }
     
     setLoading(false);
+  };
+
+  const handleEditParticipantName = (participantId) => {
+    const participant = participantsData[participantId];
+    let currentName = 'Carregando...';
+    if (participant?.displayName) {
+      currentName = participant.displayName;
+    } else if (participant?.email) {
+      currentName = participant.email.split('@')[0];
+    }
+    
+    setEditingParticipantId(participantId);
+    setEditingParticipantName(currentName);
+  };
+
+  const handleSaveParticipantName = async (participantId) => {
+    if (!editingParticipantName.trim()) {
+      setError('Nome não pode estar vazio');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userRef = doc(db, 'users', participantId);
+      await updateDoc(userRef, {
+        displayName: editingParticipantName
+      });
+      
+      setEditingParticipantId(null);
+      setEditingParticipantName('');
+      setSuccess('Nome do participante atualizado com sucesso!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('[ERROR] Erro ao atualizar nome do participante:', err);
+      setError('Erro ao atualizar nome do participante');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveParticipant = async (participantId) => {
@@ -401,17 +444,41 @@ const GerenciarViagemPage = () => {
                         </div>
                       </div>
                       
-                      <button
-                        onClick={() => {
-                          setCurrentTrip(trip);
-                          setSuccess('Visualizando viagem arquivada');
-                          setTimeout(() => setSuccess(''), 3000);
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 whitespace-nowrap"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Abrir
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setCurrentTrip(trip);
+                            setSuccess('Visualizando viagem arquivada');
+                            setTimeout(() => setSuccess(''), 3000);
+                          }}
+                          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 whitespace-nowrap"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Abrir
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Tem certeza que deseja excluir permanentemente a viagem "${trip.name}"? Esta ação não pode ser desfeita.`)) {
+                              setLoading(true);
+                              deleteTrip(trip.id).then((result) => {
+                                if (result.success) {
+                                  setSuccess('Viagem excluída com sucesso!');
+                                  setTimeout(() => setSuccess(''), 3000);
+                                } else {
+                                  setError(result.error || 'Erro ao excluir viagem');
+                                  setTimeout(() => setError(''), 3000);
+                                }
+                                setLoading(false);
+                              });
+                            }
+                          }}
+                          disabled={loading}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Apagar
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -692,39 +759,87 @@ const GerenciarViagemPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center justify-between p-4 bg-gray-700 rounded-lg"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {displayName.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {editingParticipantId === participantId ? editingParticipantName.charAt(0).toUpperCase() : displayName.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-white font-medium flex items-center gap-2 flex-wrap">
-                      {displayName}
-                      {isCreator && (
-                        <span className="text-xs px-2 py-1 bg-purple-600 rounded-full">
-                          Criador
-                        </span>
-                      )}
-                      {isCurrentUser && !isCreator && (
-                        <span className="text-xs px-2 py-1 bg-blue-600 rounded-full">
-                          Você
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {participant?.email || 'E-mail não disponível'}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    {editingParticipantId === participantId ? (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={editingParticipantName}
+                          onChange={(e) => setEditingParticipantName(e.target.value)}
+                          className="flex-1 px-2 py-1 bg-gray-600 border border-purple-500 rounded text-white text-sm focus:outline-none focus:border-purple-400"
+                          autoFocus
+                          disabled={loading}
+                        />
+                        <button
+                          onClick={() => handleSaveParticipantName(participantId)}
+                          disabled={loading}
+                          className="p-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex-shrink-0"
+                          title="Salvar nome"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingParticipantId(null);
+                            setEditingParticipantName('');
+                          }}
+                          disabled={loading}
+                          className="p-1 bg-gray-600 text-white rounded hover:bg-gray-500 disabled:opacity-50 flex-shrink-0"
+                          title="Cancelar"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-white font-medium flex items-center gap-2 flex-wrap">
+                          {displayName}
+                          {isCreator && (
+                            <span className="text-xs px-2 py-1 bg-purple-600 rounded-full">
+                              Criador
+                            </span>
+                          )}
+                          {isCurrentUser && !isCreator && (
+                            <span className="text-xs px-2 py-1 bg-blue-600 rounded-full">
+                              Você
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          {participant?.email || 'E-mail não disponível'}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {!isCreator && !isViewingArchived && (
-                  <button
-                    onClick={() => handleRemoveParticipant(participantId)}
-                    disabled={loading}
-                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Remover participante"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                {!isViewingArchived && (
+                  <div className="flex gap-1 flex-shrink-0">
+                    {editingParticipantId !== participantId && !isCreator && (
+                      <button
+                        onClick={() => handleEditParticipantName(participantId)}
+                        disabled={loading}
+                        className="p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Editar nome"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    )}
+                    {!isCreator && (
+                      <button
+                        onClick={() => handleRemoveParticipant(participantId)}
+                        disabled={loading}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Remover participante"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
                 )}
               </motion.div>
             );

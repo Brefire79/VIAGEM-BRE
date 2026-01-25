@@ -199,11 +199,16 @@ const FinanceiroPage = () => {
       });
     } else {
       setEditingExpense(null);
+      // Definir paidBy como primeiro participante ou usuário atual
+      const defaultPaidBy = participants && participants.length > 0 
+        ? participants[0] 
+        : (user?.uid || '');
+      
       setFormData({
         category: 'aereo',
         description: '',
         amount: '',
-        paidBy: user?.uid || '',
+        paidBy: defaultPaidBy,
         date: new Date().toISOString().split('T')[0],
         status: 'pago'
       });
@@ -751,18 +756,25 @@ const FinanceiroPage = () => {
                 <label className="block text-sm font-medium text-dark-100 mb-2">
                   Quem pagou? *
                 </label>
-                <select
-                  value={formData.paidBy}
-                  onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
-                  className="input"
-                  required
-                >
-                  {participants.map(participantId => (
-                    <option key={participantId} value={participantId}>
-                      {getParticipantName(participantId)}
-                    </option>
-                  ))}
-                </select>
+                {participants && participants.length > 0 ? (
+                  <select
+                    value={formData.paidBy}
+                    onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
+                    className="input"
+                    required
+                  >
+                    <option value="">-- Selecione um participante --</option>
+                    {participants.map(participantId => (
+                      <option key={participantId} value={participantId}>
+                        {getParticipantName(participantId)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="input bg-gray-100 text-gray-600 cursor-not-allowed">
+                    Nenhum participante na viagem
+                  </div>
+                )}
               </div>
 
               {/* Status do pagamento */}
