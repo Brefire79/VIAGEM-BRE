@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, DollarSign, BookOpen, LogOut, Menu, X, Settings } from 'lucide-react';
+import { Calendar, DollarSign, BookOpen, LogOut, Menu, X, Settings, Activity, TrendingUp, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { iconButtonVariants } from '../utils/motionVariants';
 
@@ -26,6 +26,9 @@ const Layout = ({ children }) => {
     { path: '/roteiro', icon: Calendar, label: 'Roteiro' },
     { path: '/financeiro', icon: DollarSign, label: 'Financeiro' },
     { path: '/historia', icon: BookOpen, label: 'História' },
+    { path: '/timeline', icon: Activity, label: 'Timeline' },
+    { path: '/atividades', icon: Zap, label: 'Atividades' },
+    { path: '/retrospectiva', icon: TrendingUp, label: 'Retrospectiva' },
     { path: '/gerenciar', icon: Settings, label: 'Gerenciar' }
   ];
 
