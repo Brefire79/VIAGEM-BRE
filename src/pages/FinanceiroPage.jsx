@@ -504,9 +504,65 @@ const FinanceiroPage = () => {
             <Receipt className="w-5 h-5 text-ocean" />
             Todas as Despesas ({expenses.length})
           </h2>
-          <div className="space-y-3">
-          {sortExpensesByDate(expenses)
-            .map((expense, index) => {
+          <div className="space-y-6">
+          {(() => {
+            // Agrupar despesas por data
+            const sortedExpenses = sortExpensesByDate(expenses);
+            const groupedByDate = {};
+            
+            sortedExpenses.forEach(expense => {
+              let expenseDate;
+              if (expense.date?.toDate) {
+                expenseDate = expense.date.toDate();
+              } else if (expense.date instanceof Date) {
+                expenseDate = expense.date;
+              } else {
+                expenseDate = new Date(expense.date);
+              }
+              
+              const day = expenseDate.getUTCDate();
+              const month = expenseDate.getUTCMonth();
+              const year = expenseDate.getUTCFullYear();
+              const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              
+              if (!groupedByDate[dateKey]) {
+                groupedByDate[dateKey] = [];
+              }
+              groupedByDate[dateKey].push(expense);
+            });
+            
+            // Renderizar grupos por data
+            return Object.keys(groupedByDate).map((dateKey, dateIdx) => {
+              const expensesOnDate = groupedByDate[dateKey];
+              const [year, month, day] = dateKey.split('-').map(Number);
+              const displayDate = new Date(year, month - 1, day);
+              const totalOnDate = expensesOnDate.reduce((sum, exp) => sum + Number(exp.amount), 0);
+              
+              return (
+                <div key={dateKey} className="space-y-3">
+                  {/* Header da data */}
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-ocean-100 to-aqua-100 rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-ocean">{day}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-dark">
+                          {format(displayDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <p className="text-xs text-sand-500">
+                          {expensesOnDate.length} {expensesOnDate.length === 1 ? 'despesa' : 'despesas'}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-ocean">
+                      {formatCurrency(totalOnDate)}
+                    </p>
+                  </div>
+                  
+                  {/* Despesas do dia */}
+                  <div className="space-y-2 pl-4">
+          {expensesOnDate.map((expense, index) => {
             const CategoryIcon = categories[expense.category].icon;
             const categoryColor = categories[expense.category].color;
             let expenseDate;
@@ -538,7 +594,7 @@ const FinanceiroPage = () => {
                 }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1 + (index * 0.05) }}
+                transition={{ delay: dateIdx * 0.05 + (index * 0.03) }}
                 whileHover={{ x: 4 }}
               >
                 {/* Badge de status pendente */}
@@ -562,9 +618,6 @@ const FinanceiroPage = () => {
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className={`badge ${categoryColor} bg-opacity-20 text-xs`}>
                             {categories[expense.category].label}
-                          </span>
-                          <span className="text-xs text-sand-500">
-                            {format(displayDate, "d 'de' MMM", { locale: ptBR })}
                           </span>
                           {isPago && (
                             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
@@ -611,6 +664,11 @@ const FinanceiroPage = () => {
               </motion.div>
             );
           })}
+                  </div>
+                </div>
+              );
+            });
+          })()}
           </div>
         </motion.div>
       )}
