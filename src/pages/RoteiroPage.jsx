@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTrip } from '../contexts/TripContext';
-import { Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, X, Edit2, Trash2, Calendar as CalendarIcon, Clock, MapPinIcon, Check, AlertCircle } from 'lucide-react';
+import { Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, X, Edit2, Trash2, Calendar as CalendarIcon, Clock, MapPinIcon, Check, AlertCircle, CalendarRange } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modalContentVariants, successVariants } from '../utils/motionVariants';
 
 const RoteiroPage = () => {
-  const { events, addEvent, updateEvent, deleteEvent, currentTrip, createTrip } = useTrip();
+  const { events, addEvent, updateEvent, deleteEvent, currentTrip, createTrip, updateTrip } = useTrip();
   const [showModal, setShowModal] = useState(false);
   const [showTripModal, setShowTripModal] = useState(false);
+  const [showEditDatesModal, setShowEditDatesModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [editDatesData, setEditDatesData] = useState({
+    startDate: '',
+    endDate: ''
+  });
   const [tripFormData, setTripFormData] = useState({
     name: '',
     destination: '',
@@ -152,6 +157,42 @@ const RoteiroPage = () => {
     } else {
       alert('Erro ao criar viagem: ' + result.error);
     }
+  };
+
+  const handleEditDates = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (!editDatesData.startDate || !editDatesData.endDate) {
+      alert('Por favor, preencha as datas de início e fim');
+      setLoading(false);
+      return;
+    }
+
+    const result = await updateTrip(currentTrip.id, {
+      startDate: editDatesData.startDate,
+      endDate: editDatesData.endDate
+    });
+
+    setLoading(false);
+
+    if (result.success) {
+      setSuccessMessage('Datas da viagem atualizadas!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      document.body.style.overflow = '';
+      setShowEditDatesModal(false);
+    } else {
+      alert('Erro ao atualizar datas: ' + result.error);
+    }
+  };
+
+  const handleOpenEditDatesModal = () => {
+    setEditDatesData({
+      startDate: currentTrip.startDate || '',
+      endDate: currentTrip.endDate || ''
+    });
+    document.body.style.overflow = 'hidden';
+    setShowEditDatesModal(true);
   };
 
   const handleOpenModal = (event = null) => {
@@ -508,6 +549,45 @@ const RoteiroPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Card de Datas da Viagem */}
+      {currentTrip.startDate && currentTrip.endDate && (
+        <motion.div
+          className="card-interactive mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-ocean-100 to-aqua-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <CalendarRange className="w-6 h-6 text-ocean" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-dark mb-2">Período da Viagem</h3>
+                <div className="flex items-center gap-2 text-sand-600">
+                  <span className="text-sm font-medium">
+                    {format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}
+                  </span>
+                  <span className="text-xs text-sand-400">•</span>
+                  <span className="text-sm font-medium">
+                    {format(new Date(currentTrip.endDate), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <motion.button
+              onClick={handleOpenEditDatesModal}
+              className="p-2.5 hover:bg-ocean-50 rounded-xl transition-all flex-shrink-0"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              title="Alterar datas"
+            >
+              <Edit2 className="w-5 h-5 text-ocean" />
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Botão adicionar com animação */}
       <motion.button
@@ -976,6 +1056,119 @@ const RoteiroPage = () => {
                   </motion.button>
                 </div>
               </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Edição de Datas */}
+      <AnimatePresence>
+        {showEditDatesModal && (
+          <>
+            <motion.div
+              className="modal-overlay"
+              variants={modalOverlayVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  document.body.style.overflow = '';
+                  setShowEditDatesModal(false);
+                }
+              }}
+            >
+              <motion.div
+                className="modal-container"
+                variants={modalContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="modal-header">
+                  <h2 className="text-2xl font-bold text-dark">Alterar Datas da Viagem</h2>
+                  <motion.button
+                    onClick={() => {
+                      document.body.style.overflow = '';
+                      setShowEditDatesModal(false);
+                    }}
+                    className="modal-close"
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+
+                <form onSubmit={handleEditDates} className="space-y-5 p-6">
+                  {/* Data de Início */}
+                  <div>
+                    <label className="block text-sm font-medium text-dark-100 mb-2">
+                      Data de Início da Viagem *
+                    </label>
+                    <input
+                      type="date"
+                      value={editDatesData.startDate}
+                      onChange={(e) => setEditDatesData({ ...editDatesData, startDate: e.target.value })}
+                      className="input"
+                      required
+                    />
+                  </div>
+
+                  {/* Data de Fim */}
+                  <div>
+                    <label className="block text-sm font-medium text-dark-100 mb-2">
+                      Data de Fim da Viagem *
+                    </label>
+                    <input
+                      type="date"
+                      value={editDatesData.endDate}
+                      onChange={(e) => setEditDatesData({ ...editDatesData, endDate: e.target.value })}
+                      className="input"
+                      min={editDatesData.startDate}
+                      required
+                    />
+                  </div>
+
+                  {/* Aviso */}
+                  <div className="bg-ocean-50 border border-ocean-200 rounded-lg p-3 flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-ocean flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-dark-50">
+                      As datas da viagem definem o período para a história e filtram os eventos dentro deste período.
+                    </p>
+                  </div>
+
+                  {/* Botões */}
+                  <div className="flex gap-3 pt-4">
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        document.body.style.overflow = '';
+                        setShowEditDatesModal(false);
+                      }}
+                      className="btn-outline flex-1"
+                      variants={buttonVariants}
+                      initial="rest"
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      className="btn-primary flex-1"
+                      variants={buttonVariants}
+                      initial="rest"
+                      whileHover="hover"
+                      whileTap="tap"
+                      disabled={loading}
+                    >
+                      {loading ? 'Salvando...' : 'Salvar Datas'}
+                    </motion.button>
+                  </div>
+                </form>
+              </motion.div>
             </motion.div>
           </>
         )}
