@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTrip } from '../contexts/TripContext';
-import { Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, X, Edit2, Trash2, Calendar as CalendarIcon, Clock, MapPinIcon, Check, AlertCircle, CalendarRange } from 'lucide-react';
+import { Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, X, Edit2, Trash2, Calendar as CalendarIcon, Clock, MapPinIcon, Check, AlertCircle, CalendarRange, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modalContentVariants, successVariants } from '../utils/motionVariants';
@@ -40,6 +40,16 @@ const RoteiroPage = () => {
     hospedagem: { icon: Hotel, label: 'Hospedagem', color: 'bg-purple-500' },
     passeio: { icon: MapPin, label: 'Passeio', color: 'bg-green-500' },
     alimentacao: { icon: UtensilsCrossed, label: 'Alimentação', color: 'bg-orange-500' }
+  };
+
+  // Função para abrir local no Google Maps
+  const openLocationInMaps = (location) => {
+    if (!location || location.trim() === '') {
+      alert('Por favor, digite um local para visualizar no mapa');
+      return;
+    }
+    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(location)}`;
+    window.open(mapsUrl, '_blank');
   };
 
   const handleSubmit = async (e) => {
@@ -779,10 +789,17 @@ const RoteiroPage = () => {
                                   {event.title}
                                 </h3>
                                 {event.location && (
-                                  <p className="text-sm text-sand-500 flex items-center gap-1 mb-2">
+                                  <motion.button
+                                    type="button"
+                                    onClick={() => openLocationInMaps(event.location)}
+                                    className="text-sm text-sand-500 hover:text-ocean hover:underline flex items-center gap-1 mb-2 transition-colors"
+                                    title="Ver no Google Maps"
+                                    whileHover={{ x: 2 }}
+                                  >
                                     <MapPinIcon className="w-3.5 h-3.5" />
                                     {event.location}
-                                  </p>
+                                    <ExternalLink className="w-3 h-3 ml-1" />
+                                  </motion.button>
                                 )}
                               </div>
                               
@@ -946,13 +963,28 @@ const RoteiroPage = () => {
                 <label className="block text-sm font-medium text-dark-100 mb-2">
                   Local
                 </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="input"
-                  placeholder="Ex: Aeroporto de Guarulhos"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="input flex-1"
+                    placeholder="Ex: Aeroporto de Guarulhos"
+                  />
+                  {formData.location && (
+                    <motion.button
+                      type="button"
+                      onClick={() => openLocationInMaps(formData.location)}
+                      className="p-3 bg-ocean hover:bg-ocean-600 text-white rounded-xl transition-all flex items-center gap-2 flex-shrink-0"
+                      title="Ver no Google Maps"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <MapPin className="w-5 h-5" />
+                      <ExternalLink className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                </div>
               </div>
 
               {/* Descrição */}
