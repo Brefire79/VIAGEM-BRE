@@ -1,0 +1,45 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0EA5E9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0284C7;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="planetGrad" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" style="stop-color:#FEF3C7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Fundo circular -->
+  <circle cx="96" cy="96" r="88" fill="url(#bgGrad)" stroke="#0369A1" stroke-width="4"/>
+  
+  <!-- Planeta -->
+  <circle cx="70" cy="75" r="30" fill="url(#planetGrad)" stroke="#D97706" stroke-width="2"/>
+  
+  <!-- Detalhes do planeta -->
+  <circle cx="60" cy="68" r="4" fill="#EAB308" opacity="0.7"/>
+  <circle cx="75" cy="80" r="3" fill="#EAB308" opacity="0.5"/>
+  
+  <!-- Anel do planeta -->
+  <ellipse cx="70" cy="75" rx="38" ry="8" fill="none" stroke="#F59E0B" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Seta trajetória -->
+  <path d="M 105 75 Q 130 60 145 85" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,2"/>
+  <path d="M 145 85 L 140 80 M 145 85 L 142 90" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Avião -->
+  <g transform="translate(125, 115) rotate(-15)">
+    <ellipse cx="0" cy="0" rx="15" ry="3" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="-2" cy="0" rx="6" ry="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="6" cy="0" rx="3" ry="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="-4" cy="-1" r="1" fill="#0EA5E9"/>
+    <circle cx="0" cy="-1" r="1" fill="#0EA5E9"/>
+  </g>
+  
+  <!-- Estrelas -->
+  <g fill="#FFFFFF" opacity="0.8">
+    <polygon points="40,40 41,43 44,43 42,45 43,48 40,46 37,48 38,45 36,43 39,43" />
+    <polygon points="150,45 151,47 153,47 152,49 153,51 150,50 147,51 148,49 147,47 149,47" />
+    <polygon points="155,130 156,132 158,132 157,133 158,135 155,134 152,135 153,133 152,132 154,132" />
+  </g>
+</svg>

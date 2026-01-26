@@ -4,11 +4,12 @@ import { useTrip } from '../contexts/TripContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, MoreHorizontal,
-  DollarSign, TrendingUp, Users, X, Edit2, Trash2, Receipt
+  DollarSign, TrendingUp, Users, X, Edit2, Trash2, Receipt, Download
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modalContentVariants } from '../utils/motionVariants';
+import { pdfExporter } from '../utils/pdfExporter';
 
 const FinanceiroPage = () => {
   const { user } = useAuth();
@@ -32,6 +33,46 @@ const FinanceiroPage = () => {
     passeios: { icon: MapPin, label: 'Passeios', color: 'bg-green-500' },
     alimentacao: { icon: UtensilsCrossed, label: 'Alimentação', color: 'bg-orange-500' },
     outros: { icon: MoreHorizontal, label: 'Outros', color: 'bg-gray-500' }
+  };
+
+  // Função para exportar PDF
+  const handleExportPDF = async () => {
+    if (!currentTrip || !expenses.length) {
+      alert('Nenhuma despesa encontrada para exportar');
+      return;
+    }
+
+    const sortedExpenses = sortExpensesByDate(expenses);
+    
+    // Preparar dados para exportação
+    const exportData = {
+      trip: {
+        name: currentTrip.name,
+        destination: currentTrip.destination,
+        startDate: currentTrip.startDate,
+        endDate: currentTrip.endDate
+      },
+      expenses: sortedExpenses.map(expense => ({
+        ...expense,
+        paidByName: getParticipantName(expense.paidBy)
+      })),
+      summary: {
+        total: calculations.total,
+        count: sortedExpenses.length,
+        average: calculations.total / sortedExpenses.length,
+        totalPending: calculations.totalPending
+      }
+    };
+
+    const filename = `financeiro-${currentTrip.name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}`;
+    
+    const success = await pdfExporter.exportFinanceReport(exportData, filename);
+    
+    if (success) {
+      alert('PDF exportado com sucesso!');
+    } else {
+      alert('Erro ao exportar PDF. Tente novamente.');
+    }
   };
 
   // Função auxiliar para pegar nome do participante
@@ -303,22 +344,40 @@ const FinanceiroPage = () => {
     >
       {/* Header */}
       <div className="mb-6">
-        <motion.h1 
-          className="text-3xl font-bold text-dark mb-2"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          💰 Financeiro
-        </motion.h1>
-        <motion.p 
-          className="text-sand-500"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          Veja quanto gastou, quanto deve e quanto tem a receber
-        </motion.p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <motion.h1 
+              className="text-3xl font-bold text-dark mb-2"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              💰 Financeiro
+            </motion.h1>
+            <motion.p 
+              className="text-sand-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              Veja quanto gastou, quanto deve e quanto tem a receber
+            </motion.p>
+          </div>
+          
+          {/* Botão Exportar PDF */}
+          {expenses.length > 0 && (
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={handleExportPDF}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* 1️⃣ TOPO – RESUMO ABSOLUTO */}

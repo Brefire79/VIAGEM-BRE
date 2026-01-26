@@ -7,12 +7,50 @@ import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, storyParagraphVariants, buttonVariants, modalOverlayVariants, modalContentVariants } from '../utils/motionVariants';
 import DOMPurify from 'dompurify';
+import { pdfExporter } from '../utils/pdfExporter';
 
 const HistoriaPage = () => {
   const { user } = useAuth();
   const { currentTrip, events, expenses, participants, participantsData } = useTrip();
   const [copied, setCopied] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
+
+  // Função para exportar PDF
+  const handleExportPDF = async () => {
+    if (!currentTrip || !tripStory) {
+      alert('Nenhuma história encontrada para exportar');
+      return;
+    }
+
+    // Ordenar eventos por data
+    const sortedEvents = events.length > 0 ? [...events].sort((a, b) => {
+      const dateA = a.date?.toDate?.() || new Date(a.date);
+      const dateB = b.date?.toDate?.() || new Date(b.date);
+      return dateA - dateB;
+    }) : [];
+
+    // Preparar dados para exportação
+    const exportData = {
+      trip: {
+        name: currentTrip.name,
+        destination: currentTrip.destination,
+        startDate: currentTrip.startDate,
+        endDate: currentTrip.endDate
+      },
+      story: tripStory.text,
+      events: sortedEvents
+    };
+
+    const filename = `historia-${currentTrip.name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}`;
+    
+    const success = await pdfExporter.exportTripStory(exportData, filename);
+    
+    if (success) {
+      alert('PDF exportado com sucesso!');
+    } else {
+      alert('Erro ao exportar PDF. Tente novamente.');
+    }
+  };
 
   // Gera a história da viagem
   const tripStory = useMemo(() => {
@@ -366,28 +404,46 @@ const HistoriaPage = () => {
     >
       {/* Header */}
       <div className="mb-6">
-        <motion.h1 
-          className="text-3xl font-bold text-dark mb-2 flex items-center gap-3"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <motion.div
-            animate={{ rotate: [0, 15, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >
-            <Sparkles className="w-8 h-8 text-ocean" />
-          </motion.div>
-          História da Viagem
-        </motion.h1>
-        <motion.p 
-          className="text-sand-500"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          Um resumo automático da sua experiência, pronto para compartilhar
-        </motion.p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <motion.h1 
+              className="text-3xl font-bold text-dark mb-2 flex items-center gap-3"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-8 h-8 text-ocean" />
+              </motion.div>
+              História da Viagem
+            </motion.h1>
+            <motion.p 
+              className="text-sand-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Um resumo automático da sua experiência, pronto para compartilhar
+            </motion.p>
+          </div>
+
+          {/* Botão Exportar PDF */}
+          {tripStory && (
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={handleExportPDF}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* Ações */}

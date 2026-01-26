@@ -5,6 +5,7 @@ import { Plus, Plane, Car, Hotel, MapPin, UtensilsCrossed, X, Edit2, Trash2, Cal
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { pageVariants, cardVariants, buttonVariants, modalOverlayVariants, modalContentVariants, successVariants } from '../utils/motionVariants';
+import TripCountdown from '../components/TripCountdown';
 
 const RoteiroPage = () => {
   const { events, addEvent, updateEvent, deleteEvent, currentTrip, createTrip, updateTrip } = useTrip();
@@ -152,7 +153,9 @@ const RoteiroPage = () => {
 
     const result = await createTrip({
       name: tripFormData.name,
-      destination: tripFormData.destination
+      destination: tripFormData.destination,
+      startDate: tripFormData.startDate,
+      endDate: tripFormData.endDate
     });
 
     setLoading(false);
@@ -163,7 +166,7 @@ const RoteiroPage = () => {
       // Restaura scroll ao fechar modal após sucesso
       document.body.style.overflow = '';
       setShowTripModal(false);
-      setTripFormData({ name: '', destination: '' });
+      setTripFormData({ name: '', destination: '', startDate: '', endDate: '' });
     } else {
       alert('Erro ao criar viagem: ' + result.error);
     }
@@ -532,16 +535,18 @@ const RoteiroPage = () => {
           >
             <CalendarIcon className="w-6 h-6 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-dark">Roteiro da Viagem</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-dark">Roteiro da Viagem</h1>
+            <motion.p 
+              className="text-sand-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {events.length} {events.length === 1 ? 'evento planejado' : 'eventos planejados'}
+            </motion.p>
+          </div>
         </div>
-        <motion.p 
-          className="text-sand-500 pl-13"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {events.length} {events.length === 1 ? 'evento planejado' : 'eventos planejados'}
-        </motion.p>
       </div>
 
       {/* Mensagem de sucesso */}
@@ -560,95 +565,19 @@ const RoteiroPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Card de Datas da Viagem */}
-      {currentTrip.startDate && currentTrip.endDate && (
+      {/* Card do Contador da Viagem */}
+      {currentTrip && (currentTrip.startDate || currentTrip.start_date) && (
         <motion.div
-          className="mb-8 space-y-4"
-          initial={{ opacity: 0, y: -20 }}
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
         >
-          {/* Título do Período */}
-          <div className="flex items-center gap-3 mb-2">
-            <motion.div 
-              className="w-8 h-8 bg-gradient-to-br from-ocean to-aqua rounded-lg flex items-center justify-center"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <CalendarRange className="w-5 h-5 text-white" />
-            </motion.div>
-            <h2 className="text-xl font-bold text-dark">Período da Viagem</h2>
-          </div>
-
-          {/* Card com datas */}
-          <motion.div
-            className="card-interactive"
-            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
-          >
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              {/* Datas */}
-              <div className="flex-1">
-                <div className="grid grid-cols-2 gap-6 sm:flex sm:gap-8">
-                  {/* Data Início */}
-                  <div>
-                    <p className="text-xs uppercase font-semibold text-sand-500 mb-2">Início</p>
-                    <p className="text-lg font-bold text-dark">
-                      {format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}
-                    </p>
-                    <p className="text-xs text-sand-400">
-                      {format(new Date(currentTrip.startDate), "EEEE", { locale: ptBR })}
-                    </p>
-                  </div>
-
-                  {/* Separador */}
-                  <div className="flex items-end pb-1">
-                    <span className="text-sand-300 text-lg">→</span>
-                  </div>
-
-                  {/* Data Fim */}
-                  <div>
-                    <p className="text-xs uppercase font-semibold text-sand-500 mb-2">Término</p>
-                    <p className="text-lg font-bold text-dark">
-                      {format(new Date(currentTrip.endDate), "d 'de' MMMM", { locale: ptBR })}
-                    </p>
-                    <p className="text-xs text-sand-400">
-                      {format(new Date(currentTrip.endDate), "EEEE", { locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botão editar */}
-              <motion.button
-                onClick={handleOpenEditDatesModal}
-                className="p-3 hover:bg-ocean-50 rounded-xl transition-all flex-shrink-0 self-start sm:self-center"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                title="Alterar datas"
-              >
-                <Edit2 className="w-5 h-5 text-ocean" />
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Aviso sobre História */}
-          <motion.div
-            className="bg-gradient-to-r from-ocean-50 to-aqua-50 border border-ocean-200 rounded-xl p-4 flex gap-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="flex-shrink-0 mt-1">
-              <AlertCircle className="w-5 h-5 text-ocean" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-dark mb-1">ℹ️ Período da História</p>
-              <p className="text-xs text-dark-50 leading-relaxed">
-                A história da viagem será gerada com base neste período. Todos os participantes verão a narrativa começando em <strong>{format(new Date(currentTrip.startDate), "d 'de' MMMM", { locale: ptBR })}</strong> e finalizando em <strong>{format(new Date(currentTrip.endDate), "d 'de' MMMM", { locale: ptBR })}</strong>.
-              </p>
-            </div>
-          </motion.div>
+          <TripCountdown 
+            startDate={currentTrip.startDate || currentTrip.start_date}
+            endDate={currentTrip.endDate || currentTrip.end_date}
+            tripName={currentTrip.name}
+          />
         </motion.div>
       )}
 

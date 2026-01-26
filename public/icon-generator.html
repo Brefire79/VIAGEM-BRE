@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gerador de Ícones PWA</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192" style="border: 1px solid #ccc;"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+    
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const center = size / 2;
+            
+            // Fundo circular azul
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#0EA5E9');
+            gradient.addColorStop(1, '#0284C7');
+            
+            ctx.beginPath();
+            ctx.arc(center, center, size * 0.4, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = '#0369A1';
+            ctx.lineWidth = size * 0.02;
+            ctx.stroke();
+            
+            // Planeta
+            const planetGradient = ctx.createRadialGradient(
+                center * 0.7, center * 0.75, 0,
+                center * 0.7, center * 0.75, size * 0.15
+            );
+            planetGradient.addColorStop(0, '#FEF3C7');
+            planetGradient.addColorStop(1, '#F59E0B');
+            
+            ctx.beginPath();
+            ctx.arc(center * 0.7, center * 0.75, size * 0.15, 0, 2 * Math.PI);
+            ctx.fillStyle = planetGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#D97706';
+            ctx.lineWidth = size * 0.01;
+            ctx.stroke();
+            
+            // Anel do planeta
+            ctx.beginPath();
+            ctx.ellipse(center * 0.7, center * 0.75, size * 0.19, size * 0.04, 0, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#F59E0B';
+            ctx.lineWidth = size * 0.008;
+            ctx.stroke();
+            
+            // Seta trajetória
+            ctx.beginPath();
+            ctx.moveTo(center * 1.1, center * 0.75);
+            ctx.quadraticCurveTo(center * 1.35, center * 0.6, center * 1.5, center * 0.85);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = size * 0.015;
+            ctx.lineCap = 'round';
+            ctx.setLineDash([size * 0.02, size * 0.01]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Ponta da seta
+            ctx.beginPath();
+            ctx.moveTo(center * 1.5, center * 0.85);
+            ctx.lineTo(center * 1.45, center * 0.8);
+            ctx.moveTo(center * 1.5, center * 0.85);
+            ctx.lineTo(center * 1.47, center * 0.9);
+            ctx.stroke();
+            
+            // Avião
+            ctx.save();
+            ctx.translate(center * 1.25, center * 1.15);
+            ctx.rotate(-Math.PI / 12);
+            
+            // Corpo do avião
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size * 0.07, size * 0.015, 0, 0, 2 * Math.PI);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.lineWidth = size * 0.005;
+            ctx.stroke();
+            
+            // Asas
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.01, 0, size * 0.03, size * 0.05, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.ellipse(size * 0.03, 0, size * 0.015, size * 0.03, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Janelas
+            ctx.fillStyle = '#0EA5E9';
+            ctx.beginPath();
+            ctx.arc(-size * 0.02, -size * 0.005, size * 0.004, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.005, size * 0.004, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Estrelas
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            drawStar(ctx, center * 0.4, center * 0.4, 5, size * 0.02, size * 0.01);
+            drawStar(ctx, center * 1.6, center * 0.45, 5, size * 0.015, size * 0.007);
+            drawStar(ctx, center * 1.65, center * 1.3, 5, size * 0.012, size * 0.006);
+        }
+        
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Gerar ícones
+        drawIcon(document.getElementById('canvas192'), 192);
+        drawIcon(document.getElementById('canvas512'), 512);
+        
+        // Função para download
+        function downloadCanvas(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Adicionar botões de download
+        document.body.innerHTML += '<br><button onclick="downloadCanvas(\'canvas192\', \'pwa-192x192.png\')">Download 192x192</button>';
+        document.body.innerHTML += '<button onclick="downloadCanvas(\'canvas512\', \'pwa-512x512.png\')">Download 512x512</button>';
+    </script>
+</body>
+</html>

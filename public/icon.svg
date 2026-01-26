@@ -1,0 +1,70 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradiente para o fundo -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0EA5E9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0284C7;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradiente para o planeta -->
+    <radialGradient id="planetGradient" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" style="stop-color:#FEF3C7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Gradiente para o avião -->
+    <linearGradient id="planeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F1F5F9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo circular -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" stroke="#0369A1" stroke-width="8"/>
+  
+  <!-- Planeta principal -->
+  <circle cx="180" cy="200" r="80" fill="url(#planetGradient)" stroke="#D97706" stroke-width="3"/>
+  
+  <!-- Detalhes do planeta (crateras) -->
+  <circle cx="160" cy="180" r="12" fill="#EAB308" opacity="0.7"/>
+  <circle cx="190" cy="210" r="8" fill="#EAB308" opacity="0.5"/>
+  <circle cx="200" cy="185" r="6" fill="#EAB308" opacity="0.6"/>
+  
+  <!-- Anel do planeta -->
+  <ellipse cx="180" cy="200" rx="100" ry="20" fill="none" stroke="#F59E0B" stroke-width="4" opacity="0.8"/>
+  
+  <!-- Seta curvada indicando trajetória -->
+  <path d="M 280 200 Q 350 150 380 220" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-dasharray="10,5"/>
+  
+  <!-- Ponta da seta -->
+  <path d="M 380 220 L 370 210 M 380 220 L 375 230" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Avião -->
+  <g transform="translate(320, 300) rotate(-15)">
+    <!-- Corpo do avião -->
+    <ellipse cx="0" cy="0" rx="35" ry="8" fill="url(#planeGradient)" stroke="#CBD5E1" stroke-width="2"/>
+    
+    <!-- Asas -->
+    <ellipse cx="-5" cy="0" rx="15" ry="25" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <ellipse cx="15" cy="0" rx="8" ry="15" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    
+    <!-- Janelas -->
+    <circle cx="-10" cy="-2" r="2" fill="#0EA5E9"/>
+    <circle cx="-5" cy="-2" r="2" fill="#0EA5E9"/>
+    <circle cx="0" cy="-2" r="2" fill="#0EA5E9"/>
+  </g>
+  
+  <!-- Estrelas decorativas -->
+  <g fill="#FFFFFF" opacity="0.8">
+    <polygon points="100,100 102,106 108,106 103,110 105,116 100,112 95,116 97,110 92,106 98,106" />
+    <polygon points="400,120 401,124 405,124 402,127 403,131 400,128 397,131 398,127 395,124 399,124" />
+    <polygon points="420,350 421,353 424,353 422,355 423,358 420,356 417,358 418,355 416,353 419,353" />
+    <polygon points="80,300 81,303 84,303 82,305 83,308 80,306 77,308 78,305 76,303 79,303" />
+  </g>
+  
+  <!-- Rastro do avião -->
+  <path d="M 290 320 Q 250 330 200 335" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.6" stroke-linecap="round" stroke-dasharray="5,5"/>
+  
+  <!-- Texto estilizado (opcional) -->
+  <text x="256" y="450" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="bold" opacity="0.9">VIAGEM</text>
+</svg>
