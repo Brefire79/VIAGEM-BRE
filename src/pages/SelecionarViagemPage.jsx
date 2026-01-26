@@ -107,11 +107,22 @@ const SelecionarViagemPage = () => {
 
   const handleEditTrip = (trip) => {
     setEditingTrip(trip);
+    // Função auxiliar para conversão local
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return '';
+      if (typeof dateStr === 'string' && dateStr.includes('-')) {
+        return dateStr; // Já está no formato yyyy-MM-dd
+      }
+      // Se for timestamp do Firebase, converter corretamente
+      const date = dateStr?.toDate ? dateStr.toDate() : new Date(dateStr);
+      return format(date, 'yyyy-MM-dd');
+    };
+    
     setFormData({
       name: trip.name || '',
       destination: trip.destination || '',
-      startDate: trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : '',
-      endDate: trip.endDate ? format(new Date(trip.endDate), 'yyyy-MM-dd') : '',
+      startDate: formatDateForInput(trip.startDate),
+      endDate: formatDateForInput(trip.endDate),
       description: trip.description || '',
       transportType: trip.transportType || 'car'
     });
@@ -133,8 +144,21 @@ const SelecionarViagemPage = () => {
       return { label: 'Em planejamento', color: 'text-blue-500', icon: Clock };
     }
     
-    const startDate = new Date(trip.startDate);
-    const endDate = new Date(trip.endDate);
+    // Conversão local para evitar problemas UTC
+    let startDate, endDate;
+    if (typeof trip.startDate === 'string') {
+      const [year, month, day] = trip.startDate.split('-').map(Number);
+      startDate = new Date(year, month - 1, day);
+    } else {
+      startDate = trip.startDate?.toDate ? trip.startDate.toDate() : new Date(trip.startDate);
+    }
+    
+    if (typeof trip.endDate === 'string') {
+      const [year, month, day] = trip.endDate.split('-').map(Number);
+      endDate = new Date(year, month - 1, day);
+    } else {
+      endDate = trip.endDate?.toDate ? trip.endDate.toDate() : new Date(trip.endDate);
+    }
     
     if (isBefore(now, startDate)) {
       return { label: 'Futura', color: 'text-blue-500', icon: Clock };
@@ -252,8 +276,18 @@ const SelecionarViagemPage = () => {
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="h-4 w-4" />
                         <span className="text-sm">
-                          {format(new Date(trip.startDate), 'dd/MM', { locale: ptBR })} - {' '}
-                          {format(new Date(trip.endDate), 'dd/MM/yyyy', { locale: ptBR })}
+                          {(() => {
+                            // Conversão local para evitar problemas UTC
+                            const formatLocalDate = (dateStr, formatStr) => {
+                              if (typeof dateStr === 'string') {
+                                const [year, month, day] = dateStr.split('-').map(Number);
+                                const localDate = new Date(year, month - 1, day);
+                                return format(localDate, formatStr, { locale: ptBR });
+                              }
+                              return format(new Date(dateStr), formatStr, { locale: ptBR });
+                            };
+                            return `${formatLocalDate(trip.startDate, 'dd/MM')} - ${formatLocalDate(trip.endDate, 'dd/MM/yyyy')}`;
+                          })()}
                         </span>
                       </div>
                     )}

@@ -120,8 +120,17 @@ export class PDFExporter {
         }
         
         if (data.trip.startDate && data.trip.endDate) {
-          const startDate = new Date(data.trip.startDate).toLocaleDateString('pt-BR');
-          const endDate = new Date(data.trip.endDate).toLocaleDateString('pt-BR');
+          // Conversão local para evitar problemas UTC
+          const formatLocalDate = (dateStr) => {
+            if (typeof dateStr === 'string') {
+              const [year, month, day] = dateStr.split('-').map(Number);
+              const localDate = new Date(year, month - 1, day);
+              return localDate.toLocaleDateString('pt-BR');
+            }
+            return new Date(dateStr).toLocaleDateString('pt-BR');
+          };
+          const startDate = formatLocalDate(data.trip.startDate);
+          const endDate = formatLocalDate(data.trip.endDate);
           pdf.text(`Período: ${startDate} - ${endDate}`, margin, yPosition);
           yPosition += 7;
         }
