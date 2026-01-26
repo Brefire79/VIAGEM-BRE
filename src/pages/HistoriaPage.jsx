@@ -59,8 +59,27 @@ const HistoriaPage = () => {
     // Filtra eventos que estão dentro do período da viagem
     let filteredEvents = events;
     if (currentTrip.startDate && currentTrip.endDate) {
-      const tripStart = new Date(currentTrip.startDate);
-      const tripEnd = new Date(currentTrip.endDate);
+      let tripStart, tripEnd;
+      
+      // Forçar interpretação como data local, não UTC
+      if (typeof currentTrip.startDate === 'string') {
+        const [year, month, day] = currentTrip.startDate.split('-').map(Number);
+        tripStart = new Date(year, month - 1, day);
+      } else if (currentTrip.startDate?.toDate) {
+        tripStart = currentTrip.startDate.toDate();
+      } else {
+        tripStart = new Date(currentTrip.startDate);
+      }
+      
+      if (typeof currentTrip.endDate === 'string') {
+        const [year, month, day] = currentTrip.endDate.split('-').map(Number);
+        tripEnd = new Date(year, month - 1, day);
+      } else if (currentTrip.endDate?.toDate) {
+        tripEnd = currentTrip.endDate.toDate();
+      } else {
+        tripEnd = new Date(currentTrip.endDate);
+      }
+      
       tripStart.setHours(0, 0, 0, 0);
       tripEnd.setHours(23, 59, 59, 999);
       
@@ -82,8 +101,24 @@ const HistoriaPage = () => {
     // Usa as datas definidas na viagem ou pega do primeiro/último evento
     let firstDate, lastDate;
     if (currentTrip.startDate && currentTrip.endDate) {
-      firstDate = new Date(currentTrip.startDate);
-      lastDate = new Date(currentTrip.endDate);
+      // Forçar interpretação como data local, não UTC
+      if (typeof currentTrip.startDate === 'string') {
+        const [year, month, day] = currentTrip.startDate.split('-').map(Number);
+        firstDate = new Date(year, month - 1, day);
+      } else if (currentTrip.startDate?.toDate) {
+        firstDate = currentTrip.startDate.toDate();
+      } else {
+        firstDate = new Date(currentTrip.startDate);
+      }
+      
+      if (typeof currentTrip.endDate === 'string') {
+        const [year, month, day] = currentTrip.endDate.split('-').map(Number);
+        lastDate = new Date(year, month - 1, day);
+      } else if (currentTrip.endDate?.toDate) {
+        lastDate = currentTrip.endDate.toDate();
+      } else {
+        lastDate = new Date(currentTrip.endDate);
+      }
     } else {
       const firstEvent = sortedEvents[0];
       const lastEvent = sortedEvents[sortedEvents.length - 1];
