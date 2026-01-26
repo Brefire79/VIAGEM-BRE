@@ -42,6 +42,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        navigateFallbackDenylist: [/^\/api\//, /chrome-extension/],
+        ignoreURLParametersMatching: [/^utm_/, /^fbclid$/],
+        exclude: [/chrome-extension/, /extension/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
